@@ -1,10 +1,180 @@
-import React from 'react';
-import { View, Text } from 'react-native';
+import React, { useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  Image,
+  Pressable,
+  Animated,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+
+import {
+  mockProducts,
+  Product,
+} from '../features/products/mockProducts';
+
+const STOCK_IMAGES = [
+  'https://picsum.photos/600/400?random=1',
+  'https://picsum.photos/600/400?random=2',
+  'https://picsum.photos/600/400?random=3',
+  'https://picsum.photos/600/400?random=4',
+  'https://picsum.photos/600/400?random=5',
+];
 
 export function GalleryScreen() {
+  const navigation = useNavigation<any>();
+
+  const scalesRef = useRef<Record<string, Animated.Value>>({});
+
+  const getScale = (id: string) => {
+    if (!scalesRef.current[id]) {
+      scalesRef.current[id] = new Animated.Value(1);
+    }
+    return scalesRef.current[id];
+  };
+
+  const onPressIn = (id: string) => {
+    Animated.spring(getScale(id), {
+      toValue: 1.05,
+      useNativeDriver: true,
+      speed: 25,
+      bounciness: 6,
+    }).start();
+  };
+
+  const onPressOut = (id: string) => {
+    Animated.spring(getScale(id), {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 25,
+      bounciness: 6,
+    }).start();
+  };
+
+  const goDetails = (productId: string) => {
+    navigation.navigate('Products', {
+      screen: 'ProductDetails',
+      params: { productId },
+    });
+  };
+
   return (
-    <View>
-      <Text>Galeria obrazów</Text>
+    <View style={styles.container}>
+      {/* HEADER */}
+      <View style={styles.header}>
+        <Pressable
+          style={styles.back}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} />
+        </Pressable>
+
+        <Text style={styles.title}>Arcydzieła</Text>
+      </View>
+
+      <FlatList
+        data={mockProducts}
+        numColumns={2}
+        keyExtractor={(item: Product) => item.id}
+        columnWrapperStyle={styles.row}
+        renderItem={({ item, index }) => (
+          <Pressable
+            style={styles.cardPressable}
+            onPress={() => goDetails(item.id)}
+            onPressIn={() => onPressIn(item.id)}
+            onPressOut={() => onPressOut(item.id)}
+          >
+            <Animated.View
+              style={[
+                styles.card,
+                { transform: [{ scale: getScale(item.id) }] },
+              ]}
+            >
+              <Image
+                source={{
+                  uri:
+                    STOCK_IMAGES[
+                      index % STOCK_IMAGES.length
+                    ],
+                }}
+                style={styles.image}
+              />
+
+              <View style={styles.textBox}>
+                <Text style={styles.name} numberOfLines={1}>
+                  {item.name}
+                </Text>
+                <Text style={styles.author} numberOfLines={1}>
+                  {item.artist}
+                </Text>
+              </View>
+            </Animated.View>
+          </Pressable>
+        )}
+      />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#f5f6f8',
+  },
+
+  /* HEADER */
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  back: {
+    marginRight: 8,
+    padding: 4,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '700',
+  },
+
+  row: {
+    justifyContent: 'space-between',
+  },
+
+  cardPressable: {
+    width: '48%',
+    marginBottom: 12,
+  },
+
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    overflow: 'hidden',
+    elevation: 3,
+  },
+
+  image: {
+    width: '100%',
+    height: 140,
+  },
+
+  textBox: {
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+  },
+
+  name: {
+    fontWeight: '700',
+    fontSize: 14,
+  },
+
+  author: {
+    color: '#666',
+    fontSize: 12,
+    marginTop: 2,
+  },
+});

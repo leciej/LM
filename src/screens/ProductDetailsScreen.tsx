@@ -6,25 +6,29 @@ import {
   Button,
   FlatList,
   TextInput,
+  ToastAndroid,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { RootStackParamList } from '../navigation/AppNavigator';
 import { mockProducts } from '../features/products/mockProducts';
-import { addToCart } from '../features/cart/commands/addToCart';
+import { addItemToCart } from '../features/cart/store/cartStore';
 import { addComment } from '../features/comments/commands/addComment';
 import { getComments } from '../features/comments/queries/getComments';
 import { useAuth } from '../auth/AuthContext';
 import type { Comment } from '../features/comments/commentsStore';
 
+type ProductsStackParamList = {
+  Products: undefined;
+  ProductDetails: { productId: string };
+};
+
 type Props = NativeStackScreenProps<
-  RootStackParamList,
+  ProductsStackParamList,
   'ProductDetails'
 >;
 
 export function ProductDetailsScreen({ route }: Props) {
   const { productId } = route.params;
-
   const product = mockProducts.find(p => p.id === productId);
   const { isLoggedIn } = useAuth();
 
@@ -44,7 +48,6 @@ export function ProductDetailsScreen({ route }: Props) {
 
   return (
     <View style={styles.container}>
-      {/* Produkt */}
       <Text style={styles.name}>{product.name}</Text>
       <Text style={styles.price}>{product.price} zł</Text>
       <Text style={styles.desc}>
@@ -60,11 +63,14 @@ export function ProductDetailsScreen({ route }: Props) {
         disabled={!isLoggedIn}
         onPress={() => {
           if (!isLoggedIn) return;
-          addToCart(product);
+          addItemToCart(product);
+          ToastAndroid.show(
+            `Dodano "${product.name}" do koszyka`,
+            ToastAndroid.SHORT
+          );
         }}
       />
 
-      {/* Komentarze */}
       <Text style={styles.sectionTitle}>Komentarze</Text>
 
       <FlatList

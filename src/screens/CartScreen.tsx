@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,11 @@ import {
   Image,
   Alert,
   ListRenderItem,
+  Animated,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { Swipeable } from 'react-native-gesture-handler';
+
 import {
   getCartSnapshot,
   decreaseItemInCart,
@@ -21,223 +24,360 @@ import type { CartItem } from '../features/cart/store/cartStore';
 
 export function CartScreen() {
   const [items, setItems] = useState<CartItem[]>([]);
-  const [blinkPlusId, setBlinkPlusId] = useState<string | null>(null);
-  const [blinkMinusId, setBlinkMinusId] = useState<string | null>(null);
+  const [checked, setChecked] = useState<Record<string, boolean>>({});
 
-  const refresh = (): void => {
-    setItems([...getCartSnapshot()]);
+  const scaleAnim = useRef<Record<string, Animated.Value>>({}).current;
+
+  const getScale = (id: string) => {
+    if (!scaleAnim[id]) {
+      scaleAnim[id] = new Animated.Value(1);
+    }
+    return scaleAnim[id];
   };
 
-  useFocusEffect(
-    useCallback((): void => {
-      refresh();
-    }, [])
-  );
+  // 🔥 POPRAWIONE – brak pętli
+  const refresh = useCallback(() => {
+    const snapshot = getCartSnapshot();
+    setItems([...snapshot]);
 
-  const total: number = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    setChecked(prev => {
+      const next: Record<string, boolean> = {};
+      snapshot.forEach(item => {
+        next[item.id] = prev[item.id] ?? true;
+      });
+      return next;
+    });
+  }, []);
+
+  useFocusEffect(refresh);
+
+  const allChecked =
+    items.length > 0 &&
+    items.every(item => checked[item.id]);
+
+  const toggleAll = () => {
+    const next: Record<string, boolean> = {};
+    items.forEach(item => {
+      next[item.id] = !allChecked;
+    });
+    setChecked(next);
+  };
+
+  const toggleOne = (id: string) => {
+    const scale = getScale(id);
+
+    Animated.sequence([
+      Animated.timing(scale, {
+        toValue: 0.7,
+        duration: 80,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scale, {
+        toValue: 1,
+        duration: 80,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    setChecked(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const removeSelected = () => {
+    Object.entries(checked).forEach(([id, isChecked]) => {
+      if (isChecked) {
+        removeItemFromCart(id);
+      }
+    });
+    setChecked({});
+    refresh();
+  };
+
+  const productsTotal = items.reduce(
+    (sum, item) =>
+      checked[item.id]
+        ? sum + item.price * item.quantity
+        : sum,
     0
   );
 
-  const order = (): void => {
+  const order = () => {
     Alert.alert(
       'Zamówienie złożone',
       'Koszyk został wyczyszczony (demo)',
       [{ text: 'OK' }]
     );
     clearCart();
+    setChecked({});
     refresh();
   };
 
+  const renderRightActions = (id: string) => (
+    <Pressable
+      style={styles.swipeDelete}
+      onPress={() => {
+        removeItemFromCart(id);
+        refresh();
+      }}
+    >
+      <Text style={styles.swipeDeleteText}>Usuń</Text>
+    </Pressable>
+  );
+
   const renderItem: ListRenderItem<CartItem> = ({ item }) => (
-    <View style={styles.item}>
-      <View style={styles.row}>
-        {item.image && (
-          <Image source={{ uri: item.image }} style={styles.thumbnail} />
-        )}
+    <Swipeable renderRightActions={() => renderRightActions(item.id)}>
+      <View style={styles.rowWrapper}>
+        {/* CHECKBOX */}
+        <Pressable onPress={() => toggleOne(item.id)}>
+          <Animated.Text
+            style={[
+              styles.checkboxText,
+              { transform: [{ scale: getScale(item.id) }] },
+            ]}
+          >
+            {checked[item.id] ? '☑' : '☐'}
+          </Animated.Text>
+        </Pressable>
 
-        <View style={styles.info}>
-          <Text style={styles.name}>{item.name}</Text>
+        {/* BOX */}
+        <View style={styles.card}>
+          <View style={styles.left}>
+            {item.image && (
+              <Image source={{ uri: item.image }} style={styles.thumb} />
+            )}
+            <View>
+              <Text style={styles.name}>{item.name}</Text>
+              <Text style={styles.price}>{item.price} zł</Text>
+            </View>
+          </View>
 
-          <View style={styles.controls}>
+          <View style={styles.right}>
+            <View style={styles.controls}>
+              <Pressable
+                style={[
+                  styles.qtyBtn,
+                  item.quantity === 1 && styles.disabled,
+                ]}
+                disabled={item.quantity === 1}
+                onPress={() => {
+                  decreaseItemInCart(item.id);
+                  refresh();
+                }}
+              >
+                <Text style={styles.qtyBtnText}>−</Text>
+              </Pressable>
+
+              <Text style={styles.qty}>{item.quantity}</Text>
+
+              <Pressable
+                style={styles.qtyBtn}
+                onPress={() => {
+                  addItemToCart(item);
+                  refresh();
+                }}
+              >
+                <Text style={styles.qtyBtnText}>+</Text>
+              </Pressable>
+            </View>
+
             <Pressable
-              style={[
-                styles.controlButton,
-                item.quantity === 1 && styles.disabled,
-              ]}
-              disabled={item.quantity === 1}
-              onPress={() => {
-                decreaseItemInCart(item.id);
-                setBlinkMinusId(item.id);
-                refresh();
-                setTimeout(() => setBlinkMinusId(null), 150);
-              }}
-            >
-              <Text style={styles.controlText}>−</Text>
-            </Pressable>
-
-            <Text
-              style={[
-                styles.quantity,
-                blinkPlusId === item.id && styles.blinkPlus,
-                blinkMinusId === item.id && styles.blinkMinus,
-              ]}
-            >
-              {item.quantity}
-            </Text>
-
-            <Pressable
-              style={styles.controlButton}
-              onPress={() => {
-                addItemToCart(item);
-                setBlinkPlusId(item.id);
-                refresh();
-                setTimeout(() => setBlinkPlusId(null), 150);
-              }}
-            >
-              <Text style={styles.controlText}>+</Text>
-            </Pressable>
-
-            <Pressable
-              style={styles.remove}
+              style={styles.trash}
               onPress={() => {
                 removeItemFromCart(item.id);
                 refresh();
               }}
             >
-              <Text style={styles.removeText}>🗑</Text>
+              <Text style={styles.trashText}>🗑</Text>
             </Pressable>
           </View>
         </View>
       </View>
-    </View>
+    </Swipeable>
   );
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Koszyk</Text>
 
-      <FlatList<CartItem>
+      {items.length > 0 && (
+        <>
+          <Pressable style={styles.selectAll} onPress={toggleAll}>
+            <Text style={styles.selectAllText}>
+              {allChecked ? '☑' : '☐'} Zaznacz wszystko
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.removeSelected}
+            onPress={removeSelected}
+          >
+            <Text style={styles.removeSelectedText}>
+              Usuń zaznaczone
+            </Text>
+          </Pressable>
+        </>
+      )}
+
+      <FlatList
         data={items}
-        keyExtractor={(item) => item.id}
+        keyExtractor={i => i.id}
         renderItem={renderItem}
+        contentContainerStyle={{ paddingBottom: 170 }}
+        ListEmptyComponent={
+          <Text style={styles.empty}>Koszyk jest pusty</Text>
+        }
       />
 
-      <Text style={styles.total}>Suma: {total} zł</Text>
+      {/* PODSUMOWANIE */}
+      <View style={styles.summary}>
+        <View style={styles.summaryRow}>
+          <Text>Wartość produktów</Text>
+          <Text>{productsTotal.toFixed(2)} zł</Text>
+        </View>
 
-      <Pressable
-        style={[styles.order, items.length === 0 && styles.disabled]}
-        disabled={items.length === 0}
-        onPress={order}
-      >
-        <Text style={styles.orderText}>Zamów</Text>
-      </Pressable>
+        <View style={styles.divider} />
 
-      <Pressable
-        style={styles.clear}
-        onPress={() => {
-          clearCart();
-          refresh();
-        }}
-      >
-        <Text style={styles.clearText}>Wyczyść koszyk</Text>
-      </Pressable>
+        <View style={styles.summaryRow}>
+          <Text style={styles.totalLabel}>Razem</Text>
+          <Text style={styles.totalValue}>
+            {productsTotal.toFixed(2)} zł
+          </Text>
+        </View>
+
+        <Pressable
+          style={[
+            styles.primary,
+            productsTotal === 0 && styles.disabled,
+          ]}
+          disabled={productsTotal === 0}
+          onPress={order}
+        >
+          <Text style={styles.primaryText}>ZAMÓW</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
-  title: {
-    fontSize: 24,
+  container: { flex: 1, padding: 16, backgroundColor: '#f5f6f8' },
+  title: { fontSize: 24, fontWeight: '700', marginBottom: 8 },
+
+  selectAll: { marginBottom: 6 },
+  selectAllText: { fontSize: 16, fontWeight: '600' },
+
+  removeSelected: { marginBottom: 8 },
+  removeSelectedText: {
+    color: '#b71c1c',
     fontWeight: '700',
-    marginBottom: 16,
   },
-  item: {
-    marginBottom: 16,
-  },
-  row: {
+
+  rowWrapper: {
     flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
   },
-  thumbnail: {
-    width: 64,
-    height: 64,
-    borderRadius: 6,
-    marginRight: 12,
-  },
-  info: {
+
+  checkboxText: { fontSize: 20, marginRight: 8 },
+
+  card: {
     flex: 1,
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 12,
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  name: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
+
+  left: { flexDirection: 'row', alignItems: 'center' },
+  thumb: {
+    width: 56,
+    height: 56,
+    borderRadius: 6,
+    marginRight: 10,
   },
+
+  name: { fontWeight: '700' },
+  price: { marginTop: 4, color: '#2563EB' },
+
+  right: { flexDirection: 'row', alignItems: 'center' },
+
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginRight: 12,
   },
-  controlButton: {
-    backgroundColor: '#e0e0e0',
-    paddingHorizontal: 12,
+
+  qtyBtn: {
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  qtyBtnText: { fontSize: 16, fontWeight: '800' },
+  qty: { marginHorizontal: 10, fontWeight: '800' },
+
+  trash: {
+    backgroundColor: '#fee2e2',
+    paddingHorizontal: 8,
     paddingVertical: 6,
-    borderRadius: 4,
+    borderRadius: 999,
   },
-  controlText: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  quantity: {
-    marginHorizontal: 12,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  blinkPlus: {
-    color: '#2e7d32',
-    fontSize: 18,
-  },
-  blinkMinus: {
-    color: '#b71c1c',
-    fontSize: 18,
-  },
-  remove: {
-    marginLeft: 16,
-  },
-  removeText: {
-    fontSize: 18,
-  },
-  total: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginTop: 24,
-  },
-  order: {
-    marginTop: 12,
-    backgroundColor: '#2e7d32',
-    padding: 14,
-    borderRadius: 6,
-  },
-  orderText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontWeight: '700',
-    fontSize: 16,
-  },
-  clear: {
-    marginTop: 10,
+  trashText: { fontSize: 16 },
+
+  swipeDelete: {
     backgroundColor: '#b71c1c',
-    padding: 14,
-    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    paddingHorizontal: 20,
+    marginBottom: 12,
+    borderRadius: 10,
   },
-  clearText: {
+  swipeDeleteText: {
+    color: '#fff',
+    fontWeight: '800',
+  },
+
+  empty: { textAlign: 'center', marginTop: 40, color: '#666' },
+
+  summary: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#fff',
+    padding: 16,
+    borderTopWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+
+  divider: {
+    height: 1,
+    backgroundColor: '#e5e7eb',
+    marginVertical: 8,
+  },
+
+  totalLabel: { fontWeight: '800' },
+  totalValue: { fontWeight: '900', fontSize: 18 },
+
+  primary: {
+    backgroundColor: '#2563EB',
+    padding: 14,
+    borderRadius: 10,
+    marginTop: 12,
+  },
+  primaryText: {
     color: '#fff',
     textAlign: 'center',
-    fontWeight: '700',
+    fontWeight: '900',
   },
-  disabled: {
-    opacity: 0.5,
-  },
+
+  disabled: { opacity: 0.5 },
 });

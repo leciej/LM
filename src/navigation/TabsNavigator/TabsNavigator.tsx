@@ -1,9 +1,11 @@
-import React, { useSyncExternalStore } from 'react';
+import { useSyncExternalStore } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
-import { ProductsScreen } from '../../screens/ProductsScreen';
+import { ProductsStackNavigator } from './ProductsStackNavigator';
 import { CartScreen } from '../../screens/CartScreen';
 import { ProfileScreen } from '../../screens/ProfileScreen';
+import { GalleryScreen } from '../../screens/GalleryScreen';
 
 import {
   subscribe,
@@ -19,11 +21,51 @@ export function TabsNavigator() {
   );
 
   return (
-    <Tab.Navigator>
+    <Tab.Navigator
+      screenOptions={({ route }: any) => ({
+        tabBarIcon: ({ color, size }: any) => {
+          let iconName: string;
+
+          switch (route.name) {
+            case 'Products':
+              iconName = 'pricetags-outline';
+              break;
+            case 'Gallery':
+              iconName = 'images-outline';
+              break;
+            case 'Cart':
+              iconName = 'cart-outline';
+              break;
+            case 'Profile':
+              iconName = 'person-outline';
+              break;
+            default:
+              iconName = 'ellipse-outline';
+          }
+
+          return (
+            <Ionicons
+              name={iconName}
+              size={size}
+              color={color}
+            />
+          );
+        },
+        tabBarActiveTintColor: '#2563EB',
+        tabBarInactiveTintColor: 'gray',
+        headerShown: false,
+      })}
+    >
       <Tab.Screen
         name="Products"
-        component={ProductsScreen}
+        component={ProductsStackNavigator}
         options={{ title: 'Produkty' }}
+      />
+
+      <Tab.Screen
+        name="Gallery"
+        component={GalleryScreen}
+        options={{ title: 'Arcydzieła' }}
       />
 
       <Tab.Screen

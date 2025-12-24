@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   View,
   Text,
@@ -8,13 +7,20 @@ import {
   Image,
   ToastAndroid,
 } from 'react-native';
-
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/AppNavigator';
+
 import { mockProducts, Product } from '../features/products/mockProducts';
 import { addItemToCart } from '../features/cart/store/cartStore';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Products'>;
+type ProductsStackParamList = {
+  Products: undefined;
+  ProductDetails: { productId: string };
+};
+
+type Props = NativeStackScreenProps<
+  ProductsStackParamList,
+  'Products'
+>;
 
 export function ProductsScreen({ navigation }: Props) {
   const handleAddToCart = (product: Product) => {
