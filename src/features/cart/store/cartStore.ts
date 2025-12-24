@@ -6,12 +6,20 @@ export type CartItem = Product & {
 
 let cart: CartItem[] = [];
 
-/* ADD */
+type Listener = () => void;
+const listeners = new Set<Listener>();
+
+export function subscribe(listener: Listener): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function notify(): void {
+  listeners.forEach(listener => listener());
+}
 
 export function addItemToCart(product: Product): void {
-  const existing = cart.find(
-    item => item.id === product.id
-  );
+  const existing = cart.find(item => item.id === product.id);
 
   if (existing) {
     cart = cart.map(item =>
@@ -19,16 +27,13 @@ export function addItemToCart(product: Product): void {
         ? { ...item, quantity: item.quantity + 1 }
         : item
     );
+    notify();
     return;
   }
 
-  cart = [
-    ...cart,
-    { ...product, quantity: 1 },
-  ];
+  cart = [...cart, { ...product, quantity: 1 }];
+  notify();
 }
-
-/* READ */
 
 export function getCartSnapshot(): CartItem[] {
   return cart;
@@ -41,21 +46,13 @@ export function getCartItemsCount(): number {
   );
 }
 
-/* UPDATE */
-
-export function decreaseItemInCart(
-  productId: string
-): void {
-  const existing = cart.find(
-    item => item.id === productId
-  );
-
+export function decreaseItemInCart(productId: string): void {
+  const existing = cart.find(item => item.id === productId);
   if (!existing) return;
 
   if (existing.quantity <= 1) {
-    cart = cart.filter(
-      item => item.id !== productId
-    );
+    cart = cart.filter(item => item.id !== productId);
+    notify();
     return;
   }
 
@@ -64,18 +61,15 @@ export function decreaseItemInCart(
       ? { ...item, quantity: item.quantity - 1 }
       : item
   );
+  notify();
 }
 
-/* DELETE */
-
-export function removeItemFromCart(
-  productId: string
-): void {
-  cart = cart.filter(
-    item => item.id !== productId
-  );
+export function removeItemFromCart(productId: string): void {
+  cart = cart.filter(item => item.id !== productId);
+  notify();
 }
 
 export function clearCart(): void {
   cart = [];
+  notify();
 }
