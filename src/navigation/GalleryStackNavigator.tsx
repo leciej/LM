@@ -2,18 +2,17 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { GalleryScreen } from '../screens/GalleryScreen';
-import { ProductDetailsScreen } from '../screens/ProductDetailsScreen';
-import type { Source } from '../features/cart/store/cartStore';
+import { GalleryDetailsScreen } from '../screens/GalleryDetailsScreen';
 
 export type GalleryStackParamList = {
   Gallery: undefined;
-  ProductDetails: {
+  GalleryDetails: {
     productId: string;
-    source: Source;
   };
 };
 
-const Stack = createNativeStackNavigator<GalleryStackParamList>();
+const Stack =
+  createNativeStackNavigator<GalleryStackParamList>();
 
 export function GalleryStackNavigator() {
   return (
@@ -27,13 +26,10 @@ export function GalleryStackNavigator() {
       />
 
       <Stack.Screen
-        name="ProductDetails"
-        component={ProductDetailsScreen}
-        initialParams={{
-          source: 'GALLERY',
-        }}
+        name="GalleryDetails"
+        component={GalleryDetailsScreen}
         options={{
-          title: 'Szczegóły produktu',
+          title: 'Arcydzieło',
         }}
       />
     </Stack.Navigator>

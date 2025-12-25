@@ -46,9 +46,8 @@ export function GalleryScreen() {
   };
 
   const goDetails = (productId: string) => {
-    navigation.navigate('ProductDetails', {
+    navigation.navigate('GalleryDetails', {
       productId,
-      source: 'GALLERY',
     });
   };
 

@@ -7,6 +7,8 @@ import {
   FlatList,
   TextInput,
   ToastAndroid,
+  Image,
+  ScrollView,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -63,12 +65,22 @@ export function ProductDetailsScreen({ route }: Props) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.name}>{product.name}</Text>
-      <Text style={styles.price}>{product.price} zł</Text>
-      <Text style={styles.desc}>
-        Piękna akwarela, ręcznie malowana
-      </Text>
+    <ScrollView style={styles.container}>
+      {/* HERO */}
+      <View style={styles.hero}>
+        {product.image && (
+          <Image
+            source={{ uri: product.image }}
+            style={styles.image}
+          />
+        )}
+
+        <View style={styles.info}>
+          <Text style={styles.name}>{product.name}</Text>
+          <Text style={styles.price}>{product.price} zł</Text>
+          <Text style={styles.desc}>{product.description}</Text>
+        </View>
+      </View>
 
       <Button
         title={
@@ -94,6 +106,7 @@ export function ProductDetailsScreen({ route }: Props) {
         ListEmptyComponent={
           <Text style={styles.empty}>Brak komentarzy</Text>
         }
+        scrollEnabled={false}
       />
 
       <TextInput
@@ -122,7 +135,7 @@ export function ProductDetailsScreen({ route }: Props) {
           refresh();
         }}
       />
-    </View>
+    </ScrollView>
   );
 }
 
@@ -131,19 +144,34 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
+  hero: {
+    flexDirection: 'row',
+    marginBottom: 20,
+  },
+  image: {
+    width: '25%',
+    aspectRatio: 1,
+    borderRadius: 14,
+    backgroundColor: '#eee',
+    resizeMode: 'contain',
+    marginRight: 16,
+  },
+  info: {
+    width: '75%',
+    justifyContent: 'center',
+  },
   name: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   price: {
-    fontSize: 18,
-    marginBottom: 12,
+    fontSize: 16,
+    marginBottom: 8,
   },
   desc: {
     fontSize: 14,
     color: '#555',
-    marginBottom: 12,
   },
   sectionTitle: {
     marginTop: 24,
