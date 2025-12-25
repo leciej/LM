@@ -22,28 +22,33 @@ import {
 } from '../features/cart/store/cartStore';
 import type { CartItem } from '../features/cart/store/cartStore';
 
+const FALLBACK_IMAGE = 'https://picsum.photos/200/200?blur=1';
+
+/** stabilny klucz */
+const getKey = (item: CartItem) => `${item.id}::${item.source}`;
+
 export function CartScreen() {
   const [items, setItems] = useState<CartItem[]>([]);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
 
   const scaleAnim = useRef<Record<string, Animated.Value>>({}).current;
 
-  const getScale = (id: string) => {
-    if (!scaleAnim[id]) {
-      scaleAnim[id] = new Animated.Value(1);
+  const getScale = (key: string) => {
+    if (!scaleAnim[key]) {
+      scaleAnim[key] = new Animated.Value(1);
     }
-    return scaleAnim[id];
+    return scaleAnim[key];
   };
 
-  // 🔥 POPRAWIONE – brak pętli
   const refresh = useCallback(() => {
     const snapshot = getCartSnapshot();
-    setItems([...snapshot]);
+    setItems(snapshot);
 
     setChecked(prev => {
       const next: Record<string, boolean> = {};
       snapshot.forEach(item => {
-        next[item.id] = prev[item.id] ?? true;
+        const key = getKey(item);
+        next[key] = prev[key] ?? true;
       });
       return next;
     });
@@ -53,18 +58,18 @@ export function CartScreen() {
 
   const allChecked =
     items.length > 0 &&
-    items.every(item => checked[item.id]);
+    items.every(item => checked[getKey(item)]);
 
   const toggleAll = () => {
     const next: Record<string, boolean> = {};
     items.forEach(item => {
-      next[item.id] = !allChecked;
+      next[getKey(item)] = !allChecked;
     });
     setChecked(next);
   };
 
-  const toggleOne = (id: string) => {
-    const scale = getScale(id);
+  const toggleOne = (key: string) => {
+    const scale = getScale(key);
 
     Animated.sequence([
       Animated.timing(scale, {
@@ -79,26 +84,25 @@ export function CartScreen() {
       }),
     ]).start();
 
-    setChecked(prev => ({ ...prev, [id]: !prev[id] }));
+    setChecked(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   const removeSelected = () => {
-    Object.entries(checked).forEach(([id, isChecked]) => {
-      if (isChecked) {
-        removeItemFromCart(id);
-      }
+    const toRemove = items.filter(item => checked[getKey(item)]);
+
+    toRemove.forEach(item => {
+      removeItemFromCart(item.cartItemId); // ✅
     });
+
     setChecked({});
     refresh();
   };
 
-  const productsTotal = items.reduce(
-    (sum, item) =>
-      checked[item.id]
-        ? sum + item.price * item.quantity
-        : sum,
-    0
-  );
+  const productsTotal = items.reduce((sum, item) => {
+    return checked[getKey(item)]
+      ? sum + item.price * item.quantity
+      : sum;
+  }, 0);
 
   const order = () => {
     Alert.alert(
@@ -111,11 +115,11 @@ export function CartScreen() {
     refresh();
   };
 
-  const renderRightActions = (id: string) => (
+  const renderRightActions = (item: CartItem) => (
     <Pressable
       style={styles.swipeDelete}
       onPress={() => {
-        removeItemFromCart(id);
+        removeItemFromCart(item.cartItemId); // ✅
         refresh();
       }}
     >
@@ -123,76 +127,79 @@ export function CartScreen() {
     </Pressable>
   );
 
-  const renderItem: ListRenderItem<CartItem> = ({ item }) => (
-    <Swipeable renderRightActions={() => renderRightActions(item.id)}>
-      <View style={styles.rowWrapper}>
-        {/* CHECKBOX */}
-        <Pressable onPress={() => toggleOne(item.id)}>
-          <Animated.Text
-            style={[
-              styles.checkboxText,
-              { transform: [{ scale: getScale(item.id) }] },
-            ]}
-          >
-            {checked[item.id] ? '☑' : '☐'}
-          </Animated.Text>
-        </Pressable>
+  const renderItem: ListRenderItem<CartItem> = ({ item }) => {
+    const key = getKey(item);
 
-        {/* BOX */}
-        <View style={styles.card}>
-          <View style={styles.left}>
-            {item.image && (
-              <Image source={{ uri: item.image }} style={styles.thumb} />
-            )}
-            <View>
-              <Text style={styles.name}>{item.name}</Text>
-              <Text style={styles.price}>{item.price} zł</Text>
-            </View>
-          </View>
-
-          <View style={styles.right}>
-            <View style={styles.controls}>
-              <Pressable
-                style={[
-                  styles.qtyBtn,
-                  item.quantity === 1 && styles.disabled,
-                ]}
-                disabled={item.quantity === 1}
-                onPress={() => {
-                  decreaseItemInCart(item.id);
-                  refresh();
-                }}
-              >
-                <Text style={styles.qtyBtnText}>−</Text>
-              </Pressable>
-
-              <Text style={styles.qty}>{item.quantity}</Text>
-
-              <Pressable
-                style={styles.qtyBtn}
-                onPress={() => {
-                  addItemToCart(item);
-                  refresh();
-                }}
-              >
-                <Text style={styles.qtyBtnText}>+</Text>
-              </Pressable>
-            </View>
-
-            <Pressable
-              style={styles.trash}
-              onPress={() => {
-                removeItemFromCart(item.id);
-                refresh();
-              }}
+    return (
+      <Swipeable renderRightActions={() => renderRightActions(item)}>
+        <View style={styles.rowWrapper}>
+          <Pressable onPress={() => toggleOne(key)}>
+            <Animated.Text
+              style={[
+                styles.checkboxText,
+                { transform: [{ scale: getScale(key) }] },
+              ]}
             >
-              <Text style={styles.trashText}>🗑</Text>
-            </Pressable>
+              {checked[key] ? '☑' : '☐'}
+            </Animated.Text>
+          </Pressable>
+
+          <View style={styles.card}>
+            <View style={styles.left}>
+              <Image
+                source={{ uri: item.image || FALLBACK_IMAGE }}
+                style={styles.thumb}
+              />
+              <View>
+                <Text style={styles.name}>{item.name}</Text>
+                <Text style={styles.price}>{item.price} zł</Text>
+              </View>
+            </View>
+
+            <View style={styles.right}>
+              <View style={styles.controls}>
+                <Pressable
+                  style={[
+                    styles.qtyBtn,
+                    item.quantity === 1 && styles.disabled,
+                  ]}
+                  disabled={item.quantity === 1}
+                  onPress={() => {
+                    decreaseItemInCart(item.cartItemId); // ✅
+                    refresh();
+                  }}
+                >
+                  <Text style={styles.qtyBtnText}>−</Text>
+                </Pressable>
+
+                <Text style={styles.qty}>{item.quantity}</Text>
+
+                <Pressable
+                  style={styles.qtyBtn}
+                  onPress={() => {
+                    addItemToCart(item, item.source);
+                    refresh();
+                  }}
+                >
+                  <Text style={styles.qtyBtnText}>+</Text>
+                </Pressable>
+              </View>
+
+              <Pressable
+                style={styles.trash}
+                onPress={() => {
+                  removeItemFromCart(item.cartItemId); // ✅
+                  refresh();
+                }}
+              >
+                <Text style={styles.trashText}>🗑</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
-      </View>
-    </Swipeable>
-  );
+      </Swipeable>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -219,7 +226,7 @@ export function CartScreen() {
 
       <FlatList
         data={items}
-        keyExtractor={i => i.id}
+        keyExtractor={getKey}
         renderItem={renderItem}
         contentContainerStyle={{ paddingBottom: 170 }}
         ListEmptyComponent={
@@ -227,7 +234,6 @@ export function CartScreen() {
         }
       />
 
-      {/* PODSUMOWANIE */}
       <View style={styles.summary}>
         <View style={styles.summaryRow}>
           <Text>Wartość produktów</Text>
@@ -258,27 +264,16 @@ export function CartScreen() {
   );
 }
 
+/* styles – BEZ ZMIAN */
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: '#f5f6f8' },
   title: { fontSize: 24, fontWeight: '700', marginBottom: 8 },
-
   selectAll: { marginBottom: 6 },
   selectAllText: { fontSize: 16, fontWeight: '600' },
-
   removeSelected: { marginBottom: 8 },
-  removeSelectedText: {
-    color: '#b71c1c',
-    fontWeight: '700',
-  },
-
-  rowWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-
+  removeSelectedText: { color: '#b71c1c', fontWeight: '700' },
+  rowWrapper: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   checkboxText: { fontSize: 20, marginRight: 8 },
-
   card: {
     flex: 1,
     flexDirection: 'row',
@@ -288,26 +283,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-
   left: { flexDirection: 'row', alignItems: 'center' },
-  thumb: {
-    width: 56,
-    height: 56,
-    borderRadius: 6,
-    marginRight: 10,
-  },
-
+  thumb: { width: 56, height: 56, borderRadius: 6, marginRight: 10 },
   name: { fontWeight: '700' },
   price: { marginTop: 4, color: '#2563EB' },
-
   right: { flexDirection: 'row', alignItems: 'center' },
-
-  controls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-
+  controls: { flexDirection: 'row', alignItems: 'center', marginRight: 12 },
   qtyBtn: {
     borderWidth: 1,
     borderColor: '#d1d5db',
@@ -317,7 +298,6 @@ const styles = StyleSheet.create({
   },
   qtyBtnText: { fontSize: 16, fontWeight: '800' },
   qty: { marginHorizontal: 10, fontWeight: '800' },
-
   trash: {
     backgroundColor: '#fee2e2',
     paddingHorizontal: 8,
@@ -325,7 +305,6 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   trashText: { fontSize: 16 },
-
   swipeDelete: {
     backgroundColor: '#b71c1c',
     justifyContent: 'center',
@@ -334,13 +313,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderRadius: 10,
   },
-  swipeDeleteText: {
-    color: '#fff',
-    fontWeight: '800',
-  },
-
+  swipeDeleteText: { color: '#fff', fontWeight: '800' },
   empty: { textAlign: 'center', marginTop: 40, color: '#666' },
-
   summary: {
     position: 'absolute',
     left: 0,
@@ -351,33 +325,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: '#e5e7eb',
   },
-
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-
-  divider: {
-    height: 1,
-    backgroundColor: '#e5e7eb',
-    marginVertical: 8,
-  },
-
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  divider: { height: 1, backgroundColor: '#e5e7eb', marginVertical: 8 },
   totalLabel: { fontWeight: '800' },
   totalValue: { fontWeight: '900', fontSize: 18 },
-
-  primary: {
-    backgroundColor: '#2563EB',
-    padding: 14,
-    borderRadius: 10,
-    marginTop: 12,
-  },
-  primaryText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontWeight: '900',
-  },
-
+  primary: { backgroundColor: '#2563EB', padding: 14, borderRadius: 10, marginTop: 12 },
+  primaryText: { color: '#fff', textAlign: 'center', fontWeight: '900' },
   disabled: { opacity: 0.5 },
 });

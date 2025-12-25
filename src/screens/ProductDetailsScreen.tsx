@@ -16,15 +16,13 @@ import { addComment } from '../features/comments/commands/addComment';
 import { getComments } from '../features/comments/queries/getComments';
 import { useAuth } from '../auth/AuthContext';
 import type { Comment } from '../features/comments/commentsStore';
+import type { Source } from '../features/cart/store/cartStore';
 
-/**
- * ⬇️ WAŻNE: source dodany
- */
 type ProductsStackParamList = {
   Products: undefined;
   ProductDetails: {
     productId: string;
-    source?: 'PRODUCT' | 'GALLERY';
+    source: Source;
   };
 };
 
@@ -56,10 +54,10 @@ export function ProductDetailsScreen({ route }: Props) {
   const handleAddToCart = () => {
     if (!isLoggedIn) return;
 
-    addItemToCart(product, source ?? 'PRODUCT');
+    addItemToCart(product, source);
 
     ToastAndroid.show(
-      `Dodano "${product.name}" do koszyka`,
+      `Dodano "${product.name}"`,
       ToastAndroid.SHORT
     );
   };

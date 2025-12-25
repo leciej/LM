@@ -74,7 +74,8 @@ export function GalleryScreen() {
             >
               <Image
                 source={{
-                  uri: STOCK_IMAGES[index % STOCK_IMAGES.length],
+                  uri:
+                    STOCK_IMAGES[index % STOCK_IMAGES.length],
                 }}
                 style={styles.image}
               />
@@ -83,7 +84,10 @@ export function GalleryScreen() {
                 <Text style={styles.name} numberOfLines={1}>
                   {item.name}
                 </Text>
-                <Text style={styles.author} numberOfLines={1}>
+                <Text
+                  style={styles.author}
+                  numberOfLines={1}
+                >
                   {item.artist}
                 </Text>
               </View>

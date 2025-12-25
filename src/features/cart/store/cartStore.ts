@@ -3,6 +3,7 @@ import type { Product } from '../../products/mockProducts';
 export type Source = 'PRODUCTS' | 'GALLERY';
 
 export type CartItem = Product & {
+  cartItemId: string;
   quantity: number;
   source: Source;
 };
@@ -17,8 +18,11 @@ export function subscribe(listener: () => void) {
   return () => listeners.delete(listener);
 }
 
-/* ADD */
+/* utils */
+const createCartItemId = () =>
+  Math.random().toString(36).slice(2);
 
+/* ADD */
 export function addItemToCart(
   product: Product,
   source: Source
@@ -31,14 +35,19 @@ export function addItemToCart(
 
   if (existing) {
     cart = cart.map(item =>
-      item === existing
+      item.cartItemId === existing.cartItemId
         ? { ...item, quantity: item.quantity + 1 }
         : item
     );
   } else {
     cart = [
       ...cart,
-      { ...product, quantity: 1, source },
+      {
+        ...product,
+        cartItemId: createCartItemId(),
+        quantity: 1,
+        source,
+      },
     ];
   }
 
@@ -46,16 +55,12 @@ export function addItemToCart(
 }
 
 /* READ */
-
 export function getCartSnapshot(): CartItem[] {
   return cart;
 }
 
 export function getCartItemsCount(): number {
-  return cart.reduce(
-    (sum, item) => sum + item.quantity,
-    0
-  );
+  return cart.reduce((s, i) => s + i.quantity, 0);
 }
 
 export function getProductsCount(): number {
@@ -71,21 +76,15 @@ export function getGalleryCount(): number {
 }
 
 /* UPDATE / DELETE */
-
-export function decreaseItemInCart(
-  id: string,
-  source: Source
-): void {
-  const existing = cart.find(
-    i => i.id === id && i.source === source
-  );
+export function decreaseItemInCart(cartItemId: string): void {
+  const existing = cart.find(i => i.cartItemId === cartItemId);
   if (!existing) return;
 
   if (existing.quantity <= 1) {
-    cart = cart.filter(i => i !== existing);
+    cart = cart.filter(i => i.cartItemId !== cartItemId);
   } else {
     cart = cart.map(i =>
-      i === existing
+      i.cartItemId === cartItemId
         ? { ...i, quantity: i.quantity - 1 }
         : i
     );
@@ -94,13 +93,8 @@ export function decreaseItemInCart(
   notify();
 }
 
-export function removeItemFromCart(
-  id: string,
-  source: Source
-): void {
-  cart = cart.filter(
-    i => !(i.id === id && i.source === source)
-  );
+export function removeItemFromCart(cartItemId: string): void {
+  cart = cart.filter(i => i.cartItemId !== cartItemId);
   notify();
 }
 

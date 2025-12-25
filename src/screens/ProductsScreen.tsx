@@ -15,7 +15,10 @@ import { addItemToCart } from '../features/cart/store/cartStore';
 
 type ProductsStackParamList = {
   Products: undefined;
-  ProductDetails: { productId: string };
+  ProductDetails: {
+    productId: string;
+    source?: 'PRODUCTS' | 'GALLERY';
+  };
 };
 
 type Props = NativeStackScreenProps<
@@ -26,6 +29,7 @@ type Props = NativeStackScreenProps<
 export function ProductsScreen({ navigation }: Props) {
   const handleAddToCart = (product: Product) => {
     addItemToCart(product, 'PRODUCTS');
+
     ToastAndroid.show(
       `Dodano "${product.name}"`,
       ToastAndroid.SHORT
@@ -43,6 +47,7 @@ export function ProductsScreen({ navigation }: Props) {
               onPress={() =>
                 navigation.navigate('ProductDetails', {
                   productId: item.id,
+                  source: 'PRODUCTS', // 🔥 KLUCZOWE
                 })
               }
             >
@@ -53,6 +58,7 @@ export function ProductsScreen({ navigation }: Props) {
                     style={styles.thumb}
                   />
                 )}
+
                 <View>
                   <Text style={styles.name}>{item.name}</Text>
                   <Text style={styles.artist}>{item.artist}</Text>
@@ -65,7 +71,9 @@ export function ProductsScreen({ navigation }: Props) {
               style={styles.btn}
               onPress={() => handleAddToCart(item)}
             >
-              <Text style={styles.btnText}>Dodaj do koszyka</Text>
+              <Text style={styles.btnText}>
+                Dodaj do koszyka
+              </Text>
             </Pressable>
           </View>
         )}
@@ -75,28 +83,44 @@ export function ProductsScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
+  container: {
+    flex: 1,
+    padding: 16,
+  },
+
   card: {
     backgroundColor: '#f2f2f2',
     borderRadius: 8,
     padding: 8,
     marginBottom: 12,
   },
-  row: { flexDirection: 'row' },
+
+  row: {
+    flexDirection: 'row',
+  },
+
   thumb: {
     width: 80,
     height: 80,
     borderRadius: 6,
     marginRight: 12,
   },
-  name: { fontWeight: '700' },
-  artist: { color: '#666' },
+
+  name: {
+    fontWeight: '700',
+  },
+
+  artist: {
+    color: '#666',
+  },
+
   btn: {
     marginTop: 8,
     backgroundColor: '#2e7d32',
     padding: 10,
     borderRadius: 6,
   },
+
   btnText: {
     color: '#fff',
     textAlign: 'center',
