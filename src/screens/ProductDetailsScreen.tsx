@@ -17,9 +17,15 @@ import { getComments } from '../features/comments/queries/getComments';
 import { useAuth } from '../auth/AuthContext';
 import type { Comment } from '../features/comments/commentsStore';
 
+/**
+ * ⬇️ WAŻNE: source dodany
+ */
 type ProductsStackParamList = {
   Products: undefined;
-  ProductDetails: { productId: string };
+  ProductDetails: {
+    productId: string;
+    source?: 'PRODUCT' | 'GALLERY';
+  };
 };
 
 type Props = NativeStackScreenProps<
@@ -28,7 +34,8 @@ type Props = NativeStackScreenProps<
 >;
 
 export function ProductDetailsScreen({ route }: Props) {
-  const { productId } = route.params;
+  const { productId, source } = route.params;
+
   const product = mockProducts.find(p => p.id === productId);
   const { isLoggedIn } = useAuth();
 
@@ -46,6 +53,17 @@ export function ProductDetailsScreen({ route }: Props) {
 
   const comments = getComments(product.id);
 
+  const handleAddToCart = () => {
+    if (!isLoggedIn) return;
+
+    addItemToCart(product, source ?? 'PRODUCT');
+
+    ToastAndroid.show(
+      `Dodano "${product.name}" do koszyka`,
+      ToastAndroid.SHORT
+    );
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.name}>{product.name}</Text>
@@ -61,14 +79,7 @@ export function ProductDetailsScreen({ route }: Props) {
             : 'Zaloguj się, aby dodać do koszyka'
         }
         disabled={!isLoggedIn}
-        onPress={() => {
-          if (!isLoggedIn) return;
-          addItemToCart(product);
-          ToastAndroid.show(
-            `Dodano "${product.name}" do koszyka`,
-            ToastAndroid.SHORT
-          );
-        }}
+        onPress={handleAddToCart}
       />
 
       <Text style={styles.sectionTitle}>Komentarze</Text>

@@ -6,10 +6,15 @@ import { ProductDetailsScreen } from '../../screens/ProductDetailsScreen';
 
 export type ProductsStackParamList = {
   Products: undefined;
-  ProductDetails: { productId: string };
+
+  ProductDetails: {
+    productId: string;
+    source?: 'PRODUCT' | 'GALLERY';
+  };
 };
 
-const Stack = createNativeStackNavigator<ProductsStackParamList>();
+const Stack =
+  createNativeStackNavigator<ProductsStackParamList>();
 
 export function ProductsStackNavigator() {
   return (

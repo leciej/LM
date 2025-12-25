@@ -1,39 +1,51 @@
 import type { Product } from '../../products/mockProducts';
 
+export type Source = 'PRODUCTS' | 'GALLERY';
+
 export type CartItem = Product & {
   quantity: number;
+  source: Source;
 };
 
 let cart: CartItem[] = [];
 
-type Listener = () => void;
-const listeners = new Set<Listener>();
+const listeners = new Set<() => void>();
+const notify = () => listeners.forEach(l => l());
 
-export function subscribe(listener: Listener): () => void {
+export function subscribe(listener: () => void) {
   listeners.add(listener);
   return () => listeners.delete(listener);
 }
 
-function notify(): void {
-  listeners.forEach(listener => listener());
-}
+/* ADD */
 
-export function addItemToCart(product: Product): void {
-  const existing = cart.find(item => item.id === product.id);
+export function addItemToCart(
+  product: Product,
+  source: Source
+): void {
+  const existing = cart.find(
+    item =>
+      item.id === product.id &&
+      item.source === source
+  );
 
   if (existing) {
     cart = cart.map(item =>
-      item.id === product.id
+      item === existing
         ? { ...item, quantity: item.quantity + 1 }
         : item
     );
-    notify();
-    return;
+  } else {
+    cart = [
+      ...cart,
+      { ...product, quantity: 1, source },
+    ];
   }
 
-  cart = [...cart, { ...product, quantity: 1 }];
   notify();
 }
+
+/* READ */
 
 export function getCartSnapshot(): CartItem[] {
   return cart;
@@ -46,26 +58,49 @@ export function getCartItemsCount(): number {
   );
 }
 
-export function decreaseItemInCart(productId: string): void {
-  const existing = cart.find(item => item.id === productId);
+export function getProductsCount(): number {
+  return cart
+    .filter(i => i.source === 'PRODUCTS')
+    .reduce((s, i) => s + i.quantity, 0);
+}
+
+export function getGalleryCount(): number {
+  return cart
+    .filter(i => i.source === 'GALLERY')
+    .reduce((s, i) => s + i.quantity, 0);
+}
+
+/* UPDATE / DELETE */
+
+export function decreaseItemInCart(
+  id: string,
+  source: Source
+): void {
+  const existing = cart.find(
+    i => i.id === id && i.source === source
+  );
   if (!existing) return;
 
   if (existing.quantity <= 1) {
-    cart = cart.filter(item => item.id !== productId);
-    notify();
-    return;
+    cart = cart.filter(i => i !== existing);
+  } else {
+    cart = cart.map(i =>
+      i === existing
+        ? { ...i, quantity: i.quantity - 1 }
+        : i
+    );
   }
 
-  cart = cart.map(item =>
-    item.id === productId
-      ? { ...item, quantity: item.quantity - 1 }
-      : item
-  );
   notify();
 }
 
-export function removeItemFromCart(productId: string): void {
-  cart = cart.filter(item => item.id !== productId);
+export function removeItemFromCart(
+  id: string,
+  source: Source
+): void {
+  cart = cart.filter(
+    i => !(i.id === id && i.source === source)
+  );
   notify();
 }
 

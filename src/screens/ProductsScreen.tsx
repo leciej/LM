@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   View,
   Text,
@@ -24,20 +25,18 @@ type Props = NativeStackScreenProps<
 
 export function ProductsScreen({ navigation }: Props) {
   const handleAddToCart = (product: Product) => {
-    addItemToCart(product);
+    addItemToCart(product, 'PRODUCTS');
     ToastAndroid.show(
-      `Dodano "${product.name}" do koszyka`,
+      `Dodano "${product.name}"`,
       ToastAndroid.SHORT
     );
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Produkty</Text>
-
       <FlatList
         data={mockProducts}
-        keyExtractor={(item: Product) => item.id}
+        keyExtractor={item => item.id}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Pressable
@@ -47,27 +46,26 @@ export function ProductsScreen({ navigation }: Props) {
                 })
               }
             >
-              <View style={styles.topRow}>
+              <View style={styles.row}>
                 {item.image && (
                   <Image
                     source={{ uri: item.image }}
-                    style={styles.thumbnail}
+                    style={styles.thumb}
                   />
                 )}
-
-                <View style={styles.info}>
+                <View>
                   <Text style={styles.name}>{item.name}</Text>
                   <Text style={styles.artist}>{item.artist}</Text>
-                  <Text style={styles.price}>{item.price} zł</Text>
+                  <Text>{item.price} zł</Text>
                 </View>
               </View>
             </Pressable>
 
             <Pressable
-              style={styles.cartButton}
+              style={styles.btn}
               onPress={() => handleAddToCart(item)}
             >
-              <Text style={styles.cartText}>Dodaj do koszyka</Text>
+              <Text style={styles.btnText}>Dodaj do koszyka</Text>
             </Pressable>
           </View>
         )}
@@ -77,55 +75,31 @@ export function ProductsScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
+  container: { flex: 1, padding: 16 },
   card: {
     backgroundColor: '#f2f2f2',
     borderRadius: 8,
     padding: 8,
     marginBottom: 12,
   },
-  topRow: {
-    flexDirection: 'row',
-  },
-  thumbnail: {
+  row: { flexDirection: 'row' },
+  thumb: {
     width: 80,
     height: 80,
     borderRadius: 6,
     marginRight: 12,
   },
-  info: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  artist: {
-    fontSize: 14,
-    color: '#666',
-  },
-  price: {
-    fontSize: 14,
-    marginTop: 4,
-  },
-  cartButton: {
+  name: { fontWeight: '700' },
+  artist: { color: '#666' },
+  btn: {
     marginTop: 8,
     backgroundColor: '#2e7d32',
     padding: 10,
     borderRadius: 6,
   },
-  cartText: {
+  btnText: {
     color: '#fff',
     textAlign: 'center',
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });

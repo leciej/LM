@@ -3,27 +3,37 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { ProductsStackNavigator } from './ProductsStackNavigator';
+import { GalleryStackNavigator } from '../GalleryStackNavigator';
 import { CartScreen } from '../../screens/CartScreen';
 import { ProfileScreen } from '../../screens/ProfileScreen';
-import { GalleryScreen } from '../../screens/GalleryScreen';
 
 import {
   subscribe,
   getCartItemsCount,
+  getProductsCount,
+  getGalleryCount,
 } from '../../features/cart/store/cartStore';
 
 const Tab = createBottomTabNavigator();
 
 export function TabsNavigator() {
-  const itemsCount = useSyncExternalStore(
+  const total = useSyncExternalStore(
     subscribe,
     getCartItemsCount
+  );
+  const products = useSyncExternalStore(
+    subscribe,
+    getProductsCount
+  );
+  const gallery = useSyncExternalStore(
+    subscribe,
+    getGalleryCount
   );
 
   return (
     <Tab.Navigator
-      screenOptions={({ route }: any) => ({
-        tabBarIcon: ({ color, size }: any) => {
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ color, size }) => {
           let iconName: string;
 
           switch (route.name) {
@@ -59,13 +69,21 @@ export function TabsNavigator() {
       <Tab.Screen
         name="Products"
         component={ProductsStackNavigator}
-        options={{ title: 'Produkty' }}
+        options={{
+          title: 'Produkty',
+          tabBarBadge:
+            products > 0 ? products : undefined,
+        }}
       />
 
       <Tab.Screen
         name="Gallery"
-        component={GalleryScreen}
-        options={{ title: 'Arcydzieła' }}
+        component={GalleryStackNavigator}
+        options={{
+          title: 'Arcydzieła',
+          tabBarBadge:
+            gallery > 0 ? gallery : undefined,
+        }}
       />
 
       <Tab.Screen
@@ -73,7 +91,8 @@ export function TabsNavigator() {
         component={CartScreen}
         options={{
           title: 'Koszyk',
-          tabBarBadge: itemsCount > 0 ? itemsCount : undefined,
+          tabBarBadge:
+            total > 0 ? total : undefined,
         }}
       />
 

@@ -9,12 +9,8 @@ import {
   Animated,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 
-import {
-  mockProducts,
-  Product,
-} from '../features/products/mockProducts';
+import { mockProducts, Product } from '../features/products/mockProducts';
 
 const STOCK_IMAGES = [
   'https://picsum.photos/600/400?random=1',
@@ -26,7 +22,6 @@ const STOCK_IMAGES = [
 
 export function GalleryScreen() {
   const navigation = useNavigation<any>();
-
   const scalesRef = useRef<Record<string, Animated.Value>>({});
 
   const getScale = (id: string) => {
@@ -40,8 +35,6 @@ export function GalleryScreen() {
     Animated.spring(getScale(id), {
       toValue: 1.05,
       useNativeDriver: true,
-      speed: 25,
-      bounciness: 6,
     }).start();
   };
 
@@ -49,32 +42,18 @@ export function GalleryScreen() {
     Animated.spring(getScale(id), {
       toValue: 1,
       useNativeDriver: true,
-      speed: 25,
-      bounciness: 6,
     }).start();
   };
 
   const goDetails = (productId: string) => {
-    navigation.navigate('Products', {
-      screen: 'ProductDetails',
-      params: { productId },
+    navigation.navigate('ProductDetails', {
+      productId,
+      source: 'GALLERY',
     });
   };
 
   return (
     <View style={styles.container}>
-      {/* HEADER */}
-      <View style={styles.header}>
-        <Pressable
-          style={styles.back}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={24} />
-        </Pressable>
-
-        <Text style={styles.title}>Arcydzieła</Text>
-      </View>
-
       <FlatList
         data={mockProducts}
         numColumns={2}
@@ -95,10 +74,7 @@ export function GalleryScreen() {
             >
               <Image
                 source={{
-                  uri:
-                    STOCK_IMAGES[
-                      index % STOCK_IMAGES.length
-                    ],
+                  uri: STOCK_IMAGES[index % STOCK_IMAGES.length],
                 }}
                 style={styles.image}
               />
@@ -125,53 +101,30 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#f5f6f8',
   },
-
-  /* HEADER */
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  back: {
-    marginRight: 8,
-    padding: 4,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
-
   row: {
     justifyContent: 'space-between',
   },
-
   cardPressable: {
     width: '48%',
     marginBottom: 12,
   },
-
   card: {
     backgroundColor: '#fff',
     borderRadius: 12,
     overflow: 'hidden',
     elevation: 3,
   },
-
   image: {
     width: '100%',
     height: 140,
   },
-
   textBox: {
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+    padding: 10,
   },
-
   name: {
     fontWeight: '700',
     fontSize: 14,
   },
-
   author: {
     color: '#666',
     fontSize: 12,
