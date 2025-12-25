@@ -14,6 +14,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { mockProducts } from '../features/products/mockProducts';
 import { addItemToCart } from '../features/cart/store/cartStore';
 import { useAuth } from '../auth/AuthContext';
+import { addRating } from '../features/ratings/store/ratingsStore';
 
 type GalleryStackParamList = {
   Gallery: undefined;
@@ -38,12 +39,9 @@ export function GalleryDetailsScreen({ route }: Props) {
 
   const [average, setAverage] = useState(getRandomRating);
   const [votes, setVotes] = useState(getRandomVotes);
-  const [myRating, setMyRating] = useState<number | null>(
-    null
-  );
-  const [previewRating, setPreviewRating] = useState<
-    number | null
-  >(null);
+  const [myRating, setMyRating] = useState<number | null>(null);
+  const [previewRating, setPreviewRating] =
+    useState<number | null>(null);
 
   const scales = useRef(
     Array.from({ length: 5 }, () => new Animated.Value(1))
@@ -85,6 +83,9 @@ export function GalleryDetailsScreen({ route }: Props) {
     setMyRating(value);
     setPreviewRating(null);
 
+    // ✅ ZAPIS DO ratingsStore (dla profilu)
+    addRating(product.id);
+
     for (let i = 0; i < value; i++) {
       animateStar(i);
     }
@@ -115,8 +116,7 @@ export function GalleryDetailsScreen({ route }: Props) {
     ));
 
   const renderInteractiveStars = () => {
-    const active =
-      previewRating ?? myRating ?? 0;
+    const active = previewRating ?? myRating ?? 0;
 
     return [0, 1, 2, 3, 4].map(i => (
       <Pressable
@@ -174,9 +174,7 @@ export function GalleryDetailsScreen({ route }: Props) {
 
       {/* TWOJA OCENA */}
       <Text style={styles.sectionTitle}>
-        {myRating
-          ? 'Twoja ocena'
-          : 'Oceń arcydzieło'}
+        {myRating ? 'Twoja ocena' : 'Oceń arcydzieło'}
       </Text>
 
       <View style={styles.starsRow}>

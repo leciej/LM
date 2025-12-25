@@ -14,8 +14,10 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { mockProducts } from '../features/products/mockProducts';
 import { addItemToCart } from '../features/cart/store/cartStore';
-import { addComment } from '../features/comments/commands/addComment';
-import { getComments } from '../features/comments/queries/getComments';
+import {
+  addCommentToStore,
+  getCommentsSnapshot,
+} from '../features/comments/commentsStore';
 import { useAuth } from '../auth/AuthContext';
 import type { Comment } from '../features/comments/commentsStore';
 import type { Source } from '../features/cart/store/cartStore';
@@ -51,7 +53,8 @@ export function ProductDetailsScreen({ route }: Props) {
     );
   }
 
-  const comments = getComments(product.id);
+  // ✅ JEDNO ŹRÓDŁO PRAWDY
+  const comments = getCommentsSnapshot(product.id);
 
   const handleAddToCart = () => {
     if (!isLoggedIn) return;
@@ -130,7 +133,7 @@ export function ProductDetailsScreen({ route }: Props) {
         disabled={!isLoggedIn}
         onPress={() => {
           if (!isLoggedIn) return;
-          addComment(product.id, commentText);
+          addCommentToStore(product.id, commentText); // ✅ EMIT
           setCommentText('');
           refresh();
         }}

@@ -6,6 +6,14 @@ export type Comment = {
 };
 
 let comments: Comment[] = [];
+const listeners = new Set<() => void>();
+
+const emit = () => listeners.forEach(l => l());
+
+export function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
 
 export function addCommentToStore(
   productId: string,
@@ -20,6 +28,8 @@ export function addCommentToStore(
       createdAt: Date.now(),
     },
   ];
+
+  emit(); // ✅ informujemy profil
 }
 
 export function getCommentsSnapshot(
@@ -28,4 +38,13 @@ export function getCommentsSnapshot(
   return comments.filter(
     comment => comment.productId === productId
   );
+}
+
+export function getCommentsCount(): number {
+  return comments.length;
+}
+
+export function resetComments() {
+  comments = [];
+  emit();
 }

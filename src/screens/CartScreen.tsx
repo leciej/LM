@@ -22,6 +22,10 @@ import {
 } from '../features/cart/store/cartStore';
 import type { CartItem } from '../features/cart/store/cartStore';
 
+import {
+  addPurchase,
+} from '../features/purchases/store/purchasesStore';
+
 const FALLBACK_IMAGE = 'https://picsum.photos/200/200?blur=1';
 
 /** stabilny klucz */
@@ -91,7 +95,7 @@ export function CartScreen() {
     const toRemove = items.filter(item => checked[getKey(item)]);
 
     toRemove.forEach(item => {
-      removeItemFromCart(item.cartItemId); // ✅
+      removeItemFromCart(item.cartItemId);
     });
 
     setChecked({});
@@ -105,11 +109,27 @@ export function CartScreen() {
   }, 0);
 
   const order = () => {
+    const purchasedItems = items.filter(
+      item => checked[getKey(item)]
+    );
+
+    if (purchasedItems.length === 0) {
+      Alert.alert(
+        'Brak produktów',
+        'Nie zaznaczono żadnych produktów.'
+      );
+      return;
+    }
+
+    addPurchase(purchasedItems);
+
     Alert.alert(
       'Zamówienie złożone',
-      'Koszyk został wyczyszczony (demo)',
-      [{ text: 'OK' }]
+      `Nakupowałeś badziewia na ${productsTotal.toFixed(
+        2
+      )} zł`
     );
+
     clearCart();
     setChecked({});
     refresh();
@@ -119,7 +139,7 @@ export function CartScreen() {
     <Pressable
       style={styles.swipeDelete}
       onPress={() => {
-        removeItemFromCart(item.cartItemId); // ✅
+        removeItemFromCart(item.cartItemId);
         refresh();
       }}
     >
@@ -165,7 +185,7 @@ export function CartScreen() {
                   ]}
                   disabled={item.quantity === 1}
                   onPress={() => {
-                    decreaseItemInCart(item.cartItemId); // ✅
+                    decreaseItemInCart(item.cartItemId);
                     refresh();
                   }}
                 >
@@ -188,7 +208,7 @@ export function CartScreen() {
               <Pressable
                 style={styles.trash}
                 onPress={() => {
-                  removeItemFromCart(item.cartItemId); // ✅
+                  removeItemFromCart(item.cartItemId);
                   refresh();
                 }}
               >
