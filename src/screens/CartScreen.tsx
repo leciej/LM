@@ -248,7 +248,7 @@ export function CartScreen() {
         data={items}
         keyExtractor={getKey}
         renderItem={renderItem}
-        contentContainerStyle={{ paddingBottom: 170 }}
+        contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <Text style={styles.empty}>Koszyk jest pusty</Text>
         }
@@ -284,7 +284,7 @@ export function CartScreen() {
   );
 }
 
-/* styles – BEZ ZMIAN */
+/* styles */
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: '#f5f6f8' },
   title: { fontSize: 24, fontWeight: '700', marginBottom: 8 },
@@ -335,6 +335,11 @@ const styles = StyleSheet.create({
   },
   swipeDeleteText: { color: '#fff', fontWeight: '800' },
   empty: { textAlign: 'center', marginTop: 40, color: '#666' },
+
+  listContent: {
+    paddingBottom: 170,
+  },
+
   summary: {
     position: 'absolute',
     left: 0,

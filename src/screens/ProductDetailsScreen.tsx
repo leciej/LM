@@ -53,7 +53,6 @@ export function ProductDetailsScreen({ route }: Props) {
     );
   }
 
-  // ✅ JEDNO ŹRÓDŁO PRAWDY
   const comments = getCommentsSnapshot(product.id);
 
   const handleAddToCart = () => {
@@ -103,6 +102,11 @@ export function ProductDetailsScreen({ route }: Props) {
         keyExtractor={(item: Comment) => item.id}
         renderItem={({ item }) => (
           <View style={styles.comment}>
+            {/* 🔑 AUTOR */}
+            <Text style={styles.author}>
+              {item.author}
+            </Text>
+
             <Text>{item.text}</Text>
           </View>
         )}
@@ -133,7 +137,7 @@ export function ProductDetailsScreen({ route }: Props) {
         disabled={!isLoggedIn}
         onPress={() => {
           if (!isLoggedIn) return;
-          addCommentToStore(product.id, commentText); // ✅ EMIT
+          addCommentToStore(product.id, commentText);
           setCommentText('');
           refresh();
         }}
@@ -187,6 +191,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#eee',
     borderRadius: 6,
     marginBottom: 6,
+  },
+  /* 🔑 STYL AUTORA */
+  author: {
+    fontWeight: '700',
+    marginBottom: 2,
+    color: '#111',
   },
   empty: {
     fontStyle: 'italic',
