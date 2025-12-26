@@ -13,32 +13,35 @@ import {
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 
-import { mockProducts } from '../features/products/mockProducts';
+import {
+  mockGallery,
+  GalleryItem,
+} from '../features/gallery/store/galleryStore';
+
 import { addActivity } from '../features/activity/store/activityStore';
 
-export function AdminAddProductScreen({ navigation, route }: any) {
-  const editingProductId = route?.params?.productId;
-  const editingProduct = editingProductId
-    ? mockProducts.find(p => p.id === editingProductId)
+export function AdminAddGalleryScreen({ navigation, route }: any) {
+  const editingId = route?.params?.galleryId;
+  const editingItem = editingId
+    ? mockGallery.find(g => g.id === editingId)
     : undefined;
 
-  const [name, setName] = useState(editingProduct?.name ?? '');
-  const [artist, setArtist] = useState(editingProduct?.artist ?? '');
-  const [price, setPrice] = useState(
-    editingProduct ? String(editingProduct.price) : ''
-  );
-  const [description, setDescription] = useState(
-    editingProduct?.description ?? ''
-  );
+  const [title, setTitle] = useState(editingItem?.title ?? '');
+  const [author, setAuthor] = useState(editingItem?.author ?? '');
   const [image, setImage] = useState<string | undefined>(
-    editingProduct?.image
+    editingItem?.image
   );
   const [imageUrlInput, setImageUrlInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
+  const showToast = (msg: string) => {
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(msg, ToastAndroid.SHORT);
+    }
+  };
+
   const pickImage = async () => {
     const result = await launchImageLibrary({ mediaType: 'photo' });
-
     if (result.assets?.[0]?.uri) {
       setImage(result.assets[0].uri);
       setImageUrlInput('');
@@ -51,89 +54,63 @@ export function AdminAddProductScreen({ navigation, route }: any) {
     }
   };
 
-  const showToast = (message: string) => {
-    if (Platform.OS === 'android') {
-      ToastAndroid.show(message, ToastAndroid.SHORT);
-    }
-  };
-
-  const saveProduct = () => {
-    if (!name || !artist || !price || !description) {
+  const saveGallery = () => {
+    if (!title || !author || !image) {
       Alert.alert(
         'Uzupełnij dane',
-        'Wszystkie pola są wymagane'
+        'Tytuł, autor i obraz są wymagane'
       );
       return;
     }
 
     if (isSaving) return;
-
     setIsSaving(true);
 
-    // 🔄 symulacja backendu
     setTimeout(() => {
-      if (editingProduct) {
-        editingProduct.name = name;
-        editingProduct.artist = artist;
-        editingProduct.price = Number(price);
-        editingProduct.description = description;
-        editingProduct.image = image;
+      if (editingItem) {
+        editingItem.title = title;
+        editingItem.author = author;
+        editingItem.image = image;
 
-        addActivity('EDIT_PRODUCT');
-        showToast('Zapisano zmiany produktu');
+        addActivity('EDIT_GALLERY');
+        showToast('Zapisano zmiany arcydzieła');
       } else {
-        mockProducts.push({
+        mockGallery.push({
           id: Date.now().toString(),
-          name,
-          artist,
-          price: Number(price),
-          description,
+          title,
+          author,
           image,
-        });
+        } as GalleryItem);
 
-        addActivity('ADD_PRODUCT');
-        showToast('Dodano nowy produkt');
+        addActivity('ADD_GALLERY');
+        showToast('Dodano nowe arcydzieło');
       }
 
       setIsSaving(false);
       navigation.goBack();
-    }, 700);
+    }, 600);
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>
-        {editingProduct ? 'Edytuj produkt' : 'Dodaj produkt'}
+        {editingItem
+          ? 'Edytuj arcydzieło'
+          : 'Dodaj arcydzieło'}
       </Text>
 
       <TextInput
         style={styles.input}
-        placeholder="Nazwa"
-        value={name}
-        onChangeText={setName}
+        placeholder="Tytuł"
+        value={title}
+        onChangeText={setTitle}
       />
 
       <TextInput
         style={styles.input}
-        placeholder="Artysta"
-        value={artist}
-        onChangeText={setArtist}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Cena"
-        keyboardType="numeric"
-        value={price}
-        onChangeText={setPrice}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Opis produktu"
-        value={description}
-        onChangeText={setDescription}
-        multiline
+        placeholder="Autor"
+        value={author}
+        onChangeText={setAuthor}
       />
 
       <Pressable
@@ -164,7 +141,7 @@ export function AdminAddProductScreen({ navigation, route }: any) {
           styles.saveButton,
           isSaving && styles.disabled,
         ]}
-        onPress={saveProduct}
+        onPress={saveGallery}
         disabled={isSaving}
       >
         {isSaving ? (
@@ -211,7 +188,7 @@ const styles = StyleSheet.create({
   preview: {
     width: '100%',
     height: 180,
-    borderRadius: 6,
+    borderRadius: 8,
     marginBottom: 12,
   },
   saveButton: {

@@ -7,7 +7,7 @@ import { RegisterScreen } from '../screens/RegisterScreen';
 
 import { useAuth } from '../auth/AuthContext';
 import { TabsNavigator } from './TabsNavigator/TabsNavigator';
-import { AdminNavigator } from './AdminNavigator';
+import { AdminTabsNavigator } from './AdminTabsNavigator';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -24,9 +24,7 @@ export function AppNavigator() {
   const { isLoggedIn, role } = useAuth();
 
   return (
-    <Stack.Navigator
-      screenOptions={{ headerShown: false }}
-    >
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       {!isLoggedIn ? (
         <>
           {/* 👋 EKRAN STARTOWY */}
@@ -48,7 +46,7 @@ export function AppNavigator() {
       ) : role === 'ADMIN' ? (
         <Stack.Screen
           name="Admin"
-          component={AdminNavigator}
+          component={AdminTabsNavigator}
         />
       ) : (
         <Stack.Screen

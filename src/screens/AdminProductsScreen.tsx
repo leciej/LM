@@ -6,6 +6,9 @@ import {
   Pressable,
   StyleSheet,
   Image,
+  ToastAndroid,
+  Platform,
+  Alert,
 } from 'react-native';
 
 import {
@@ -13,11 +16,37 @@ import {
   Product,
 } from '../features/products/mockProducts';
 
+import { addActivity } from '../features/activity/store/activityStore';
+
 export function AdminProductsScreen({ navigation }: any) {
   const [products, setProducts] = useState<Product[]>(mockProducts);
 
-  const removeProduct = (id: string) => {
-    setProducts(prev => prev.filter(p => p.id !== id));
+  const showToast = (message: string) => {
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(message, ToastAndroid.SHORT);
+    }
+  };
+
+  const removeProduct = (product: Product) => {
+    Alert.alert(
+      'Usuń produkt',
+      `Czy na pewno chcesz usunąć "${product.name}"?`,
+      [
+        { text: 'Anuluj', style: 'cancel' },
+        {
+          text: 'Usuń',
+          style: 'destructive',
+          onPress: () => {
+            setProducts(prev =>
+              prev.filter(p => p.id !== product.id)
+            );
+
+            addActivity('REMOVE_PRODUCT');
+            showToast('Produkt został usunięty');
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -28,9 +57,7 @@ export function AdminProductsScreen({ navigation }: any) {
         style={styles.addButton}
         onPress={() => navigation.navigate('AddProduct')}
       >
-        <Text style={styles.addText}>
-          Dodaj produkt
-        </Text>
+        <Text style={styles.addText}>Dodaj produkt</Text>
       </Pressable>
 
       <FlatList
@@ -67,7 +94,7 @@ export function AdminProductsScreen({ navigation }: any) {
 
               <Pressable
                 style={styles.deleteButton}
-                onPress={() => removeProduct(item.id)}
+                onPress={() => removeProduct(item)}
               >
                 <Text style={styles.deleteText}>Usuń</Text>
               </Pressable>
@@ -79,78 +106,43 @@ export function AdminProductsScreen({ navigation }: any) {
   );
 }
 
+/* =========================
+   STYLES
+   ========================= */
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
+  container: { flex: 1, padding: 16 },
+  title: { fontSize: 22, fontWeight: '700', marginBottom: 12 },
   addButton: {
     backgroundColor: '#1976d2',
     padding: 12,
     borderRadius: 6,
     marginBottom: 12,
   },
-  addText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontWeight: '600',
-  },
+  addText: { color: '#fff', textAlign: 'center', fontWeight: '600' },
   card: {
     backgroundColor: '#f2f2f2',
     borderRadius: 8,
     padding: 8,
     marginBottom: 12,
   },
-  topRow: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  thumbnail: {
-    width: 80,
-    height: 80,
-    borderRadius: 6,
-    marginRight: 12,
-  },
-  info: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  artist: {
-    fontSize: 14,
-    color: '#666',
-  },
-  price: {
-    fontSize: 14,
-    marginTop: 4,
-  },
-  actions: {
-    gap: 6,
-  },
+  topRow: { flexDirection: 'row', marginBottom: 8 },
+  thumbnail: { width: 80, height: 80, borderRadius: 6, marginRight: 12 },
+  info: { flex: 1, justifyContent: 'center' },
+  name: { fontSize: 16, fontWeight: '600' },
+  artist: { fontSize: 14, color: '#666' },
+  price: { fontSize: 14, marginTop: 4 },
+  actions: { gap: 6 },
   editButton: {
     backgroundColor: '#ffa000',
     padding: 8,
     borderRadius: 6,
   },
-  editText: {
-    textAlign: 'center',
-    fontWeight: '600',
-  },
+  editText: { textAlign: 'center', fontWeight: '600' },
   deleteButton: {
     backgroundColor: '#d32f2f',
     padding: 8,
     borderRadius: 6,
   },
-  deleteText: {
-    color: '#fff',
-    textAlign: 'center',
-  },
+  deleteText: { color: '#fff', textAlign: 'center' },
 });
