@@ -70,7 +70,8 @@ export function subscribe(listener: () => void) {
 
 export function addCommentToStore(
   productId: string,
-  text: string
+  text: string,
+  author: string
 ) {
   comments = [
     ...comments,
@@ -79,7 +80,7 @@ export function addCommentToStore(
       productId,
       text,
       createdAt: Date.now(),
-      author: 'Ty',
+      author,
     },
   ];
 

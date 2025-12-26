@@ -16,16 +16,18 @@ type NavigationProp = NativeStackNavigationProp<
 >;
 
 export function LoginScreen() {
-  const { loginAsUser, loginAsAdmin } = useAuth();
+  const { loginAsGuest, loginAsAdmin } = useAuth();
   const navigation = useNavigation<NavigationProp>();
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Logowanie (demo)</Text>
+      <Text style={styles.title}>
+        Guten Tag twoja mać!
+      </Text>
 
       <Pressable
         style={[styles.button, styles.userButton]}
-        onPress={loginAsUser}
+        onPress={loginAsGuest}
       >
         <Text style={styles.buttonText}>
           Zaloguj jako użytkownik

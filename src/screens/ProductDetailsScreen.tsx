@@ -22,6 +22,10 @@ import { useAuth } from '../auth/AuthContext';
 import type { Comment } from '../features/comments/commentsStore';
 import type { Source } from '../features/cart/store/cartStore';
 
+/* =========================
+   NAV TYPES
+   ========================= */
+
 type ProductsStackParamList = {
   Products: undefined;
   ProductDetails: {
@@ -35,11 +39,16 @@ type Props = NativeStackScreenProps<
   'ProductDetails'
 >;
 
+/* =========================
+   SCREEN
+   ========================= */
+
 export function ProductDetailsScreen({ route }: Props) {
   const { productId, source } = route.params;
 
   const product = mockProducts.find(p => p.id === productId);
-  const { isLoggedIn } = useAuth();
+
+  const { isLoggedIn, user } = useAuth();
 
   const [commentText, setCommentText] = useState('');
   const [version, setVersion] = useState(0);
@@ -53,6 +62,7 @@ export function ProductDetailsScreen({ route }: Props) {
     );
   }
 
+  /* ✅ JEDYNE ŹRÓDŁO KOMENTARZY */
   const comments = getCommentsSnapshot(product.id);
 
   const handleAddToCart = () => {
@@ -64,6 +74,20 @@ export function ProductDetailsScreen({ route }: Props) {
       `Dodano "${product.name}"`,
       ToastAndroid.SHORT
     );
+  };
+
+  const handleAddComment = () => {
+    if (!isLoggedIn || !user) return;
+    if (!commentText.trim()) return;
+
+    addCommentToStore(
+      product.id,
+      commentText.trim(),
+      user.name // 👈 IMIĘ Z REJESTRACJI
+    );
+
+    setCommentText('');
+    refresh();
   };
 
   return (
@@ -102,7 +126,7 @@ export function ProductDetailsScreen({ route }: Props) {
         keyExtractor={(item: Comment) => item.id}
         renderItem={({ item }) => (
           <View style={styles.comment}>
-            {/* 🔑 AUTOR */}
+            {/* 👤 AUTOR */}
             <Text style={styles.author}>
               {item.author}
             </Text>
@@ -111,7 +135,9 @@ export function ProductDetailsScreen({ route }: Props) {
           </View>
         )}
         ListEmptyComponent={
-          <Text style={styles.empty}>Brak komentarzy</Text>
+          <Text style={styles.empty}>
+            Brak komentarzy
+          </Text>
         }
         scrollEnabled={false}
       />
@@ -135,16 +161,15 @@ export function ProductDetailsScreen({ route }: Props) {
             : 'Zaloguj się, aby dodać komentarz'
         }
         disabled={!isLoggedIn}
-        onPress={() => {
-          if (!isLoggedIn) return;
-          addCommentToStore(product.id, commentText);
-          setCommentText('');
-          refresh();
-        }}
+        onPress={handleAddComment}
       />
     </ScrollView>
   );
 }
+
+/* =========================
+   STYLES
+   ========================= */
 
 const styles = StyleSheet.create({
   container: {
@@ -192,7 +217,6 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginBottom: 6,
   },
-  /* 🔑 STYL AUTORA */
   author: {
     fontWeight: '700',
     marginBottom: 2,

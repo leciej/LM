@@ -16,40 +16,64 @@ type AuthContextType = {
   isLoggedIn: boolean;
   role: UserRole | null;
   user: User | null;
-  loginAsUser: () => void;
+
+  loginAsGuest: () => void;
   loginAsAdmin: () => void;
+
   register: (user: User) => void;
   logout: () => void;
 };
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext =
+  createContext<AuthContextType | undefined>(
+    undefined
+  );
 
 type AuthProviderProps = {
   children: ReactNode;
 };
 
-export function AuthProvider({ children }: AuthProviderProps) {
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [role, setRole] = useState<UserRole | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+export function AuthProvider({
+  children,
+}: AuthProviderProps) {
+  const [isLoggedIn, setIsLoggedIn] =
+    useState(false);
+  const [role, setRole] =
+    useState<UserRole | null>(null);
+  const [user, setUser] =
+    useState<User | null>(null);
 
-  const loginAsUser = (): void => {
-    setIsLoggedIn(true);
+  /* ===== LOGIN ===== */
+
+  const loginAsGuest = () => {
+    setUser({
+      name: 'Gość',
+      email: 'guest@demo.pl',
+    });
     setRole('USER');
+    setIsLoggedIn(true);
   };
 
-  const loginAsAdmin = (): void => {
-    setIsLoggedIn(true);
+  const loginAsAdmin = () => {
+    setUser({
+      name: 'Admin',
+      email: 'admin@demo.pl',
+    });
     setRole('ADMIN');
-  };
-
-  const register = (newUser: User): void => {
-    setUser(newUser);
     setIsLoggedIn(true);
-    setRole('USER');
   };
 
-  const logout = (): void => {
+  /* ===== REGISTER ===== */
+
+  const register = (newUser: User) => {
+    setUser(newUser);
+    setRole('USER');
+    setIsLoggedIn(true);
+  };
+
+  /* ===== LOGOUT ===== */
+
+  const logout = () => {
     setIsLoggedIn(false);
     setRole(null);
     setUser(null);
@@ -61,7 +85,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isLoggedIn,
         role,
         user,
-        loginAsUser,
+        loginAsGuest,
         loginAsAdmin,
         register,
         logout,
@@ -75,7 +99,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used inside AuthProvider');
+    throw new Error(
+      'useAuth must be used inside AuthProvider'
+    );
   }
   return context;
 }

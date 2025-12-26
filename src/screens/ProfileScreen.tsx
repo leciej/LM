@@ -25,14 +25,47 @@ import {
   getActivities,
 } from '../features/activity/store/activityStore';
 
-/* ===== helpers ===== */
+/* =========================
+   TYPES & META
+   ========================= */
+
+type Role = 'USER' | 'ADMIN';
+
+const ROLE_META: Record<
+  Role,
+  { label: string; color: string; bg: string }
+> = {
+  USER: {
+    label: '👤 Użytkownik',
+    color: '#2563EB',
+    bg: '#DBEAFE',
+  },
+  ADMIN: {
+    label: '🛠 Administrator',
+    color: '#111827',
+    bg: '#E5E7EB',
+  },
+};
+
+const FALLBACK_META = {
+  label: '—',
+  color: '#6B7280',
+  bg: '#F3F4F6',
+};
+
+const roleMeta = (role: Role | null) =>
+  role ? ROLE_META[role] : FALLBACK_META;
+
+/* =========================
+   HELPERS
+   ========================= */
 
 const label = (type: string) =>
   ({
     COMMENT: '💬 Dodano komentarz',
     RATING: '⭐ Dodano ocenę',
     PURCHASE: '🛒 Złożono zamówienie',
-  }[type]);
+  }[type] ?? '—');
 
 function timeAgo(timestamp: number) {
   const diff = Date.now() - timestamp;
@@ -43,10 +76,13 @@ function timeAgo(timestamp: number) {
   return `${h} h temu`;
 }
 
-/* ===== screen ===== */
+/* =========================
+   SCREEN
+   ========================= */
 
 export function ProfileScreen() {
-  const { role, logout } = useAuth();
+  const { role, logout, user } = useAuth();
+  const meta = roleMeta(role);
 
   const purchasedCount = useSyncExternalStore(
     subscribePurchases,
@@ -82,15 +118,46 @@ export function ProfileScreen() {
     <View style={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>👤</Text>
+        <View
+          style={[
+            styles.avatar,
+            { backgroundColor: meta.bg },
+          ]}
+        >
+          <Text
+            style={[
+              styles.avatarText,
+              { color: meta.color },
+            ]}
+          >
+            {user?.name?.[0] ?? '👤'}
+          </Text>
         </View>
 
-        <Text style={styles.title}>Profil</Text>
-        <Text style={styles.subtitle}>
-          Status: zalogowany
+        <Text style={styles.title}>
+          {user?.name ?? 'Gość'}
         </Text>
-        <Text>Rola: {role}</Text>
+
+        <Text style={styles.subtitle}>
+          {user?.email}
+        </Text>
+
+        {/* ROLE BADGE */}
+        <View
+          style={[
+            styles.roleBadge,
+            { backgroundColor: meta.bg },
+          ]}
+        >
+          <Text
+            style={[
+              styles.roleText,
+              { color: meta.color },
+            ]}
+          >
+            {meta.label}
+          </Text>
+        </View>
       </View>
 
       {/* DASHBOARD */}
@@ -131,7 +198,9 @@ export function ProfileScreen() {
           <Text>
             ⭐ Średnia: {avgRating.toFixed(1)}
           </Text>
-          <Text>💬 Komentarze: {commentsCount}</Text>
+          <Text>
+            💬 Komentarze: {commentsCount}
+          </Text>
         </View>
       </View>
 
@@ -146,7 +215,9 @@ export function ProfileScreen() {
   );
 }
 
-/* ===== styles ===== */
+/* =========================
+   STYLES
+   ========================= */
 
 const styles = StyleSheet.create({
   container: {
@@ -154,73 +225,70 @@ const styles = StyleSheet.create({
     padding: 24,
     justifyContent: 'space-between',
   },
-
   header: {
     alignItems: 'center',
     marginTop: 40,
   },
-
   avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#e5e7eb',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
   },
-
   avatarText: {
     fontSize: 32,
+    fontWeight: '800',
   },
-
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
-    marginBottom: 4,
   },
-
   subtitle: {
     fontSize: 14,
     color: '#666',
     marginBottom: 8,
   },
-
+  roleBadge: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 999,
+    marginTop: 6,
+  },
+  roleText: {
+    fontWeight: '700',
+    fontSize: 13,
+  },
   dashboard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 24,
     gap: 12,
   },
-
   card: {
     flex: 1,
     backgroundColor: '#f9fafb',
     borderRadius: 12,
     padding: 12,
   },
-
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
     marginBottom: 8,
   },
-
   activityRow: {
     marginBottom: 6,
   },
-
   time: {
     fontSize: 12,
     color: '#666',
     marginLeft: 16,
   },
-
   muted: {
     color: '#666',
     fontStyle: 'italic',
   },
-
   actions: {
     marginBottom: 24,
   },
