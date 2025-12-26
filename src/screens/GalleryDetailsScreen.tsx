@@ -11,7 +11,10 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { mockProducts } from '../features/products/mockProducts';
+import {
+  getGallery,
+  type GalleryItem,
+} from '../features/gallery/store/galleryStore';
 import { addItemToCart } from '../features/cart/store/cartStore';
 import { useAuth } from '../auth/AuthContext';
 import { addRating } from '../features/ratings/store/ratingsStore';
@@ -19,7 +22,7 @@ import { addRating } from '../features/ratings/store/ratingsStore';
 type GalleryStackParamList = {
   Gallery: undefined;
   GalleryDetails: {
-    productId: string;
+    galleryId: string;
   };
 };
 
@@ -34,7 +37,7 @@ const getRandomVotes = () =>
   Math.floor(Math.random() * 5) + 2;
 
 export function GalleryDetailsScreen({ route }: Props) {
-  // 🔑 HOOKI ZAWSZE NA GÓRZE
+  // 🔑 HOOKI NA GÓRZE
   const { isLoggedIn } = useAuth();
 
   const [average, setAverage] = useState(getRandomRating);
@@ -47,11 +50,10 @@ export function GalleryDetailsScreen({ route }: Props) {
     Array.from({ length: 5 }, () => new Animated.Value(1))
   ).current;
 
-  const { productId } = route.params;
-  const product = mockProducts.find(p => p.id === productId);
+  const { galleryId } = route.params;
+  const item = getGallery().find(g => g.id === galleryId);
 
-  // ❗ WARUNEK DOPIERO PO HOOKACH
-  if (!product) {
+  if (!item) {
     return (
       <View style={styles.container}>
         <Text>Nie znaleziono arcydzieła</Text>
@@ -83,8 +85,7 @@ export function GalleryDetailsScreen({ route }: Props) {
     setMyRating(value);
     setPreviewRating(null);
 
-    // ✅ ZAPIS DO ratingsStore (dla profilu)
-    addRating(product.id);
+    addRating(item.id);
 
     for (let i = 0; i < value; i++) {
       animateStar(i);
@@ -94,10 +95,19 @@ export function GalleryDetailsScreen({ route }: Props) {
   const handleAddToCart = () => {
     if (!isLoggedIn) return;
 
-    addItemToCart(product, 'GALLERY');
+    addItemToCart(
+      {
+        id: item.id,
+        name: item.title,
+        image: item.image,
+        artist: item.author,
+        price: 0, // arcydzieła – symbolicznie / gratis / później backend
+      },
+      'GALLERY'
+    );
 
     ToastAndroid.show(
-      `Dodano "${product.name}" do koszyka`,
+      `Dodano "${item.title}" do koszyka`,
       ToastAndroid.SHORT
     );
   };
@@ -141,16 +151,15 @@ export function GalleryDetailsScreen({ route }: Props) {
 
   return (
     <View style={styles.container}>
-      {product.image && (
+      {item.image && (
         <Image
-          source={{ uri: product.image }}
+          source={{ uri: item.image }}
           style={styles.image}
         />
       )}
 
-      <Text style={styles.name}>{product.name}</Text>
-      <Text style={styles.author}>{product.artist}</Text>
-      <Text style={styles.price}>{product.price} zł</Text>
+      <Text style={styles.name}>{item.title}</Text>
+      <Text style={styles.author}>{item.author}</Text>
 
       <Button
         title={
@@ -212,11 +221,6 @@ const styles = StyleSheet.create({
   author: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 4,
-  },
-  price: {
-    fontSize: 18,
-    fontWeight: '600',
     marginBottom: 12,
   },
   ratingRow: {

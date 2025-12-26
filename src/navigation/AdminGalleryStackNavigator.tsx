@@ -1,12 +1,12 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import { GalleryScreen } from '../screens/GalleryScreen';
-import { GalleryDetailsScreen } from '../screens/GalleryDetailsScreen';
+import { AdminGalleryScreen } from '../screens/AdminGalleryScreen';
+import { AdminAddGalleryScreen } from '../screens/AdminAddGalleryScreen';
 
 export type AdminGalleryStackParamList = {
   Gallery: undefined;
-  GalleryDetails: { galleryId?: string } | undefined;
+  AddGallery: { galleryId?: string } | undefined;
 };
 
 const Stack =
@@ -17,13 +17,13 @@ export function AdminGalleryStackNavigator() {
     <Stack.Navigator>
       <Stack.Screen
         name="Gallery"
-        component={GalleryScreen}
+        component={AdminGalleryScreen}
         options={{ title: 'Arcydzieła' }}
       />
 
       <Stack.Screen
-        name="GalleryDetails"
-        component={GalleryDetailsScreen}
+        name="AddGallery"
+        component={AdminAddGalleryScreen}
         options={{ title: 'Dodaj / edytuj arcydzieło' }}
       />
     </Stack.Navigator>

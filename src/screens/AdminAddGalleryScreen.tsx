@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,9 @@ import {
 import { launchImageLibrary } from 'react-native-image-picker';
 
 import {
-  mockGallery,
+  getGallery,
+  addGallery,
+  updateGallery,
   GalleryItem,
 } from '../features/gallery/store/galleryStore';
 
@@ -22,17 +24,23 @@ import { addActivity } from '../features/activity/store/activityStore';
 
 export function AdminAddGalleryScreen({ navigation, route }: any) {
   const editingId = route?.params?.galleryId;
+
   const editingItem = editingId
-    ? mockGallery.find(g => g.id === editingId)
+    ? getGallery().find(g => g.id === editingId)
     : undefined;
 
-  const [title, setTitle] = useState(editingItem?.title ?? '');
-  const [author, setAuthor] = useState(editingItem?.author ?? '');
-  const [image, setImage] = useState<string | undefined>(
-    editingItem?.image
-  );
+  const [title, setTitle] = useState('');
+  const [author, setAuthor] = useState('');
+  const [image, setImage] = useState<string | undefined>();
   const [imageUrlInput, setImageUrlInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (!editingItem) return;
+    setTitle(editingItem.title);
+    setAuthor(editingItem.author);
+    setImage(editingItem.image);
+  }, [editingId]);
 
   const showToast = (msg: string) => {
     if (Platform.OS === 'android') {
@@ -66,22 +74,20 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
     if (isSaving) return;
     setIsSaving(true);
 
-    setTimeout(() => {
-      if (editingItem) {
-        editingItem.title = title;
-        editingItem.author = author;
-        editingItem.image = image;
+    const item: GalleryItem = {
+      id: editingId ?? Date.now().toString(),
+      title,
+      author,
+      image,
+    };
 
+    setTimeout(() => {
+      if (editingId) {
+        updateGallery(item);
         addActivity('EDIT_GALLERY');
         showToast('Zapisano zmiany arcydzieła');
       } else {
-        mockGallery.push({
-          id: Date.now().toString(),
-          title,
-          author,
-          image,
-        } as GalleryItem);
-
+        addGallery(item);
         addActivity('ADD_GALLERY');
         showToast('Dodano nowe arcydzieło');
       }
@@ -94,9 +100,7 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>
-        {editingItem
-          ? 'Edytuj arcydzieło'
-          : 'Dodaj arcydzieło'}
+        {editingId ? 'Edytuj arcydzieło' : 'Dodaj arcydzieło'}
       </Text>
 
       <TextInput
@@ -154,20 +158,9 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
   );
 }
 
-/* =========================
-   STYLES
-   ========================= */
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginBottom: 16,
-  },
+  container: { flex: 1, padding: 16 },
+  title: { fontSize: 22, fontWeight: '700', marginBottom: 16 },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
@@ -181,10 +174,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginBottom: 8,
   },
-  imageText: {
-    color: '#fff',
-    textAlign: 'center',
-  },
+  imageText: { color: '#fff', textAlign: 'center' },
   preview: {
     width: '100%',
     height: 180,
@@ -197,11 +187,6 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     alignItems: 'center',
   },
-  saveText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  disabled: {
-    opacity: 0.7,
-  },
+  saveText: { color: '#fff', fontWeight: '600' },
+  disabled: { opacity: 0.7 },
 });

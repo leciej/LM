@@ -9,20 +9,22 @@ import {
   Animated,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useSyncExternalStore } from 'react';
 
-import { mockProducts, Product } from '../features/products/mockProducts';
-
-const STOCK_IMAGES = [
-  'https://picsum.photos/600/400?random=1',
-  'https://picsum.photos/600/400?random=2',
-  'https://picsum.photos/600/400?random=3',
-  'https://picsum.photos/600/400?random=4',
-  'https://picsum.photos/600/400?random=5',
-];
+import {
+  subscribe,
+  getGallery,
+  type GalleryItem,
+} from '../features/gallery/store/galleryStore';
 
 export function GalleryScreen() {
   const navigation = useNavigation<any>();
   const scalesRef = useRef<Record<string, Animated.Value>>({});
+
+  const gallery = useSyncExternalStore(
+    subscribe,
+    getGallery
+  );
 
   const getScale = (id: string) => {
     if (!scalesRef.current[id]) {
@@ -45,20 +47,20 @@ export function GalleryScreen() {
     }).start();
   };
 
-  const goDetails = (productId: string) => {
+  const goDetails = (galleryId: string) => {
     navigation.navigate('GalleryDetails', {
-      productId,
+      galleryId,
     });
   };
 
   return (
     <View style={styles.container}>
       <FlatList
-        data={mockProducts}
+        data={gallery}
         numColumns={2}
-        keyExtractor={(item: Product) => item.id}
+        keyExtractor={(item: GalleryItem) => item.id}
         columnWrapperStyle={styles.row}
-        renderItem={({ item, index }) => (
+        renderItem={({ item }) => (
           <Pressable
             style={styles.cardPressable}
             onPress={() => goDetails(item.id)}
@@ -72,22 +74,19 @@ export function GalleryScreen() {
               ]}
             >
               <Image
-                source={{
-                  uri:
-                    STOCK_IMAGES[index % STOCK_IMAGES.length],
-                }}
+                source={{ uri: item.image }}
                 style={styles.image}
               />
 
               <View style={styles.textBox}>
                 <Text style={styles.name} numberOfLines={1}>
-                  {item.name}
+                  {item.title}
                 </Text>
                 <Text
                   style={styles.author}
                   numberOfLines={1}
                 >
-                  {item.artist}
+                  {item.author}
                 </Text>
               </View>
             </Animated.View>
@@ -97,6 +96,10 @@ export function GalleryScreen() {
     </View>
   );
 }
+
+/* =========================
+   STYLES (BEZ ZMIAN)
+   ========================= */
 
 const styles = StyleSheet.create({
   container: {

@@ -7,12 +7,11 @@ import { GalleryDetailsScreen } from '../screens/GalleryDetailsScreen';
 export type GalleryStackParamList = {
   Gallery: undefined;
   GalleryDetails: {
-    productId: string;
+    galleryId: string;
   };
 };
 
-const Stack =
-  createNativeStackNavigator<GalleryStackParamList>();
+const Stack = createNativeStackNavigator<GalleryStackParamList>();
 
 export function GalleryStackNavigator() {
   return (
@@ -20,17 +19,13 @@ export function GalleryStackNavigator() {
       <Stack.Screen
         name="Gallery"
         component={GalleryScreen}
-        options={{
-          title: 'Arcydzieła',
-        }}
+        options={{ title: 'Arcydzieła' }}
       />
 
       <Stack.Screen
         name="GalleryDetails"
         component={GalleryDetailsScreen}
-        options={{
-          title: 'Arcydzieło',
-        }}
+        options={{ title: 'Arcydzieło' }}
       />
     </Stack.Navigator>
   );
