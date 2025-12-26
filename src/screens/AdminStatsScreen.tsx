@@ -1,11 +1,10 @@
-import React from 'react';
+import React, { useMemo, useSyncExternalStore } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
 } from 'react-native';
-import { useSyncExternalStore } from 'react';
 
 import {
   getGallery,
@@ -15,30 +14,85 @@ import {
 import { mockProducts } from '../features/products/mockProducts';
 
 import {
-  getActivities,
+  subscribe as subscribePurchases,
+  getPurchasedCount,
+  getTotalSpent,
+} from '../features/purchases/store/purchasesStore';
+
+import {
+  subscribe as subscribeRatings,
+  getRatedCountTotal,
+  getAverageRatingTotal,
+} from '../features/ratings/store/ratingsStore';
+
+import {
+  subscribe as subscribeComments,
+  getCommentsCountTotal,
+} from '../features/comments/commentsStore';
+
+import {
   subscribe as activitySubscribe,
+  getActivities,
 } from '../features/activity/store/activityStore';
 
-type ActivityLike = {
-  type: string;
-  date?: string;
-};
+import { LineChart } from '../components/LineChart';
+
+/* =========================
+   SCREEN
+   ========================= */
 
 export function AdminStatsScreen() {
-  const gallery = useSyncExternalStore(
-    gallerySubscribe,
-    getGallery
+  const gallery =
+    useSyncExternalStore(gallerySubscribe, getGallery) ?? [];
+
+  const activities =
+    useSyncExternalStore(
+      activitySubscribe,
+      getActivities
+    ) ?? [];
+
+  const purchasedCount =
+    useSyncExternalStore(
+      subscribePurchases,
+      getPurchasedCount
+    ) ?? 0;
+
+  const totalSpent =
+    useSyncExternalStore(
+      subscribePurchases,
+      getTotalSpent
+    ) ?? 0;
+
+  const ratedCount =
+    useSyncExternalStore(
+      subscribeRatings,
+      getRatedCountTotal
+    ) ?? 0;
+
+  const avgRating =
+    useSyncExternalStore(
+      subscribeRatings,
+      getAverageRatingTotal
+    ) ?? 0;
+
+  const commentsCount =
+    useSyncExternalStore(
+      subscribeComments,
+      getCommentsCountTotal
+    ) ?? 0;
+
+  const products = mockProducts ?? [];
+
+  const series = useMemo(
+    () => [2, 4, 1, 7, 3, 6, 4],
+    []
   );
 
-  const activities = useSyncExternalStore(
-    activitySubscribe,
-    getActivities
-  ) as ActivityLike[];
-
-  const products = mockProducts;
-
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+    >
       {/* KAFELKI */}
       <View style={styles.grid}>
         <StatCard
@@ -55,26 +109,51 @@ export function AdminStatsScreen() {
         />
       </View>
 
-      {/* OSTATNIE AKCJE */}
-      <Text style={styles.subtitle}>
-        Ostatnie akcje
-      </Text>
+      {/* STATYSTYKI */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>
+          Statystyki platformy
+        </Text>
 
-      {activities.slice(0, 6).map((a, i) => (
-        <View key={i} style={styles.activity}>
-          <Text style={styles.activityText}>
-            • {a.type}
+        <StatRow
+          label="✅ Kupione produkty"
+          value={purchasedCount.toString()}
+        />
+        <StatRow
+          label="💸 Wydane pieniądze"
+          value={`${totalSpent.toFixed(2)} zł`}
+        />
+        <StatRow
+          label="⭐ Ocenione"
+          value={ratedCount.toString()}
+        />
+        <StatRow
+          label="⭐ Średnia"
+          value={avgRating.toFixed(1)}
+        />
+        <StatRow
+          label="💬 Komentarze"
+          value={commentsCount.toString()}
+        />
+      </View>
+
+      {/* WYKRES */}
+      {series.length > 1 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            📈 Wydatki – ostatnie 7 dni
           </Text>
-          <Text style={styles.activityDate}>
-            {a.date
-              ? new Date(a.date).toLocaleString()
-              : ''}
-          </Text>
+
+          <LineChart data={series} />
         </View>
-      ))}
+      )}
     </ScrollView>
   );
 }
+
+/* =========================
+   COMPONENTS
+   ========================= */
 
 function StatCard({
   label,
@@ -85,28 +164,55 @@ function StatCard({
 }) {
   return (
     <View style={styles.card}>
-      <Text style={styles.cardValue}>{value}</Text>
-      <Text style={styles.cardLabel}>{label}</Text>
+      <Text style={styles.cardValue}>
+        {value}
+      </Text>
+      <Text style={styles.cardLabel}>
+        {label}
+      </Text>
     </View>
   );
 }
 
+function StatRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <View style={styles.statRow}>
+      <Text style={styles.statLabel}>
+        {label}
+      </Text>
+      <Text style={styles.statValue}>
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+/* =========================
+   STYLES
+   ========================= */
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
     backgroundColor: '#f5f6f8',
   },
-  subtitle: {
-    marginTop: 24,
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 8,
+
+  content: {
+    padding: 16,
+    paddingBottom: 32,
   },
+
   grid: {
     flexDirection: 'row',
     gap: 12,
   },
+
   card: {
     flex: 1,
     backgroundColor: '#fff',
@@ -115,27 +221,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 3,
   },
+
   cardValue: {
     fontSize: 26,
     fontWeight: '800',
   },
+
   cardLabel: {
     marginTop: 4,
     fontSize: 13,
     color: '#555',
   },
-  activity: {
+
+  section: {
+    marginTop: 24,
     backgroundColor: '#fff',
-    padding: 12,
-    borderRadius: 10,
+    borderRadius: 14,
+    padding: 16,
+    elevation: 2,
+  },
+
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+
+  statRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 8,
   },
-  activityText: {
-    fontWeight: '600',
+
+  statLabel: {
+    color: '#444',
   },
-  activityDate: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
+
+  statValue: {
+    fontWeight: '700',
   },
 });

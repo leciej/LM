@@ -1,60 +1,12 @@
 import React from 'react';
-import { View, Text, Button, StyleSheet } from 'react-native';
+import { View, Text, Button, StyleSheet, Pressable } from 'react-native';
 import { useSyncExternalStore } from 'react';
 import { useAuth } from '../auth/AuthContext';
-
-import {
-  subscribe as subscribePurchases,
-  getPurchasedCount,
-  getTotalSpent,
-} from '../features/purchases/store/purchasesStore';
-
-import {
-  subscribe as subscribeRatings,
-  getRatedCount,
-  getAverageRating,
-  getRatedCountTotal,
-  getAverageRatingTotal,
-} from '../features/ratings/store/ratingsStore';
-
-import {
-  subscribe as subscribeComments,
-  getCommentsCount,
-  getCommentsCountTotal,
-} from '../features/comments/commentsStore';
 
 import {
   subscribe as subscribeActivity,
   getActivities,
 } from '../features/activity/store/activityStore';
-
-/* =========================
-   TYPES & META
-   ========================= */
-
-type Role = 'USER' | 'ADMIN';
-
-const ROLE_META: Record<Role, { label: string; color: string; bg: string }> = {
-  USER: {
-    label: '👤 Użytkownik',
-    color: '#2563EB',
-    bg: '#DBEAFE',
-  },
-  ADMIN: {
-    label: '🛠 Administrator',
-    color: '#111827',
-    bg: '#E5E7EB',
-  },
-};
-
-const FALLBACK_META = {
-  label: '—',
-  color: '#6B7280',
-  bg: '#F3F4F6',
-};
-
-const roleMeta = (role: Role | null) =>
-  role ? ROLE_META[role] : FALLBACK_META;
 
 /* =========================
    HELPERS
@@ -72,14 +24,9 @@ const isAdminType = (type: string) =>
 
 const label = (type: string) =>
   ({
-    COMMENT: '💬 Dodano komentarz',
-    RATING: '⭐ Dodano ocenę',
-    PURCHASE: '🛒 Złożono zamówienie',
-
     ADD_PRODUCT: '➕ Dodano produkt',
     EDIT_PRODUCT: '✏️ Edytowano produkt',
     REMOVE_PRODUCT: '🗑 Usunięto produkt',
-
     ADD_GALLERY: '🖼➕ Dodano arcydzieło',
     EDIT_GALLERY: '🖼✏️ Edytowano arcydzieło',
     REMOVE_GALLERY: '🖼🗑 Usunięto arcydzieło',
@@ -98,97 +45,87 @@ function timeAgo(timestamp: number) {
    SCREEN
    ========================= */
 
-export function ProfileScreen() {
-  const { role, logout, user } = useAuth();
-  const meta = roleMeta(role);
-  const isAdmin = role === 'ADMIN';
-
-  const purchasedCount = useSyncExternalStore(
-    subscribePurchases,
-    getPurchasedCount
-  );
-
-  const totalSpent = useSyncExternalStore(
-    subscribePurchases,
-    getTotalSpent
-  );
-
-  const ratedCount = useSyncExternalStore(
-    subscribeRatings,
-    isAdmin ? getRatedCountTotal : getRatedCount
-  );
-
-  const avgRating = useSyncExternalStore(
-    subscribeRatings,
-    isAdmin ? getAverageRatingTotal : getAverageRating
-  );
-
-  const commentsCount = useSyncExternalStore(
-    subscribeComments,
-    isAdmin ? getCommentsCountTotal : getCommentsCount
-  );
+export function AdminProfileScreen({ navigation }: any) {
+  const { logout, user } = useAuth();
 
   const activities = useSyncExternalStore(
     subscribeActivity,
     getActivities
-  );
-
-  const visibleActivities = isAdmin
-    ? activities.filter(a => isAdminType(a.type))
-    : activities.filter(a => !isAdminType(a.type));
+  ).filter(a => isAdminType(a.type));
 
   return (
     <View style={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
-        <View style={[styles.avatar, { backgroundColor: meta.bg }]}>
-          <Text style={[styles.avatarText, { color: meta.color }]}>
-            {user?.name?.[0] ?? '👤'}
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>
+            {user?.name?.[0] ?? 'A'}
           </Text>
         </View>
 
         <Text style={styles.title}>
-          {user?.name ?? (isAdmin ? 'Administrator' : 'Gość')}
+          {user?.name ?? 'Administrator'}
         </Text>
 
         <Text style={styles.subtitle}>{user?.email}</Text>
 
-        <View style={[styles.roleBadge, { backgroundColor: meta.bg }]}>
-          <Text style={[styles.roleText, { color: meta.color }]}>
-            {meta.label}
-          </Text>
+        <View style={styles.roleBadge}>
+          <Text style={styles.roleText}>🛠 Administrator</Text>
         </View>
       </View>
 
       {/* DASHBOARD */}
       <View style={styles.dashboard}>
-        {/* ACTIVITY */}
+        {/* OSTATNIA AKTYWNOŚĆ */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Ostatnia aktywność</Text>
 
-          {visibleActivities.length === 0 ? (
+          {activities.length === 0 ? (
             <Text style={styles.muted}>Brak aktywności</Text>
           ) : (
-            visibleActivities.map((a, i) => (
+            activities.slice(0, 5).map((a, i) => (
               <View key={i} style={styles.activityRow}>
                 <Text>{label(a.type)}</Text>
-                <Text style={styles.time}>{timeAgo(a.createdAt)}</Text>
+                <Text style={styles.time}>
+                  {timeAgo(a.createdAt)}
+                </Text>
               </View>
             ))
           )}
         </View>
 
-        {/* STATS */}
+        {/* SZYBKIE AKCJE */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>
-            {isAdmin ? 'Statystyki platformy' : 'Twoje statystyki'}
-          </Text>
+          <Text style={styles.sectionTitle}>Szybkie akcje</Text>
 
-          <Text>✅ Kupione produkty: {purchasedCount}</Text>
-          <Text>💸 Wydane pieniądze: {totalSpent.toFixed(2)} zł</Text>
-          <Text>⭐ Ocenione: {ratedCount}</Text>
-          <Text>⭐ Średnia: {avgRating.toFixed(1)}</Text>
-          <Text>💬 Komentarze: {commentsCount}</Text>
+          <Pressable
+            style={styles.actionButton}
+            onPress={() =>
+              navigation.navigate('AdminProducts', {
+                screen: 'AddProduct',
+              })
+            }
+          >
+            <Text style={styles.actionText}>➕ Dodaj produkt</Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.actionButton}
+            onPress={() =>
+              navigation.navigate('AdminGallery', {
+                screen: 'AddGallery',
+              })
+            }
+          >
+            <Text style={styles.actionText}>🖼 Dodaj arcydzieło</Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.actionButtonSecondary}
+            onPress={() => navigation.navigate('AdminStats')}
+          >
+            <Text style={styles.actionText}>📊 Statystyki</Text>
+          </Pressable>
         </View>
       </View>
 
@@ -218,6 +155,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
+    backgroundColor: '#E5E7EB',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -225,6 +163,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 32,
     fontWeight: '800',
+    color: '#111827',
   },
   title: {
     fontSize: 22,
@@ -239,6 +178,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 999,
+    backgroundColor: '#E5E7EB',
     marginTop: 6,
   },
   roleText: {
@@ -247,9 +187,8 @@ const styles = StyleSheet.create({
   },
   dashboard: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 24,
     gap: 12,
+    marginTop: 24,
   },
   card: {
     flex: 1,
@@ -273,6 +212,22 @@ const styles = StyleSheet.create({
   muted: {
     color: '#666',
     fontStyle: 'italic',
+  },
+  actionButton: {
+    backgroundColor: '#2563EB',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  actionButtonSecondary: {
+    backgroundColor: '#E5E7EB',
+    padding: 10,
+    borderRadius: 8,
+  },
+  actionText: {
+    color: '#111827',
+    fontWeight: '700',
+    textAlign: 'center',
   },
   actions: {
     marginBottom: 24,

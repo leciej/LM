@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { AdminStatsStackNavigator } from './AdminStatsStackNavigator';
-import { ProfileScreen } from '../screens/ProfileScreen';
+import { AdminProfileScreen } from '../screens/AdminProfileScreen';
 import { AdminProductsStackNavigator } from './AdminProductsStackNavigator';
 import { AdminGalleryStackNavigator } from './AdminGalleryStackNavigator';
 
@@ -25,8 +25,7 @@ export function AdminTabsNavigator() {
           return (
             <Ionicons
               name={
-                icons[route.name as keyof typeof icons] ??
-                'ellipse-outline'
+                icons[route.name as keyof typeof icons] ?? 'ellipse-outline'
               }
               size={size}
               color={color}
@@ -57,7 +56,7 @@ export function AdminTabsNavigator() {
 
       <Tab.Screen
         name="AdminProfile"
-        component={ProfileScreen}
+        component={AdminProfileScreen}
         options={{ title: 'Profil' }}
       />
     </Tab.Navigator>
