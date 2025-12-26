@@ -11,10 +11,7 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import {
-  getGallery,
-  type GalleryItem,
-} from '../features/gallery/store/galleryStore';
+import { getGallery } from '../features/gallery/store/galleryStore';
 import { addItemToCart } from '../features/cart/store/cartStore';
 import { useAuth } from '../auth/AuthContext';
 import { addRating } from '../features/ratings/store/ratingsStore';
@@ -101,7 +98,8 @@ export function GalleryDetailsScreen({ route }: Props) {
         name: item.title,
         image: item.image,
         artist: item.author,
-        price: 0, // arcydzieła – symbolicznie / gratis / później backend
+        price: 0,
+        description: `Arcydzieło: ${item.title}`, // ✅ WYMAGANE POLE
       },
       'GALLERY'
     );

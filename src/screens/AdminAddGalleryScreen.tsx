@@ -40,7 +40,7 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
     setTitle(editingItem.title);
     setAuthor(editingItem.author);
     setImage(editingItem.image);
-  }, [editingId]);
+  }, [editingItem]);
 
   const showToast = (msg: string) => {
     if (Platform.OS === 'android') {

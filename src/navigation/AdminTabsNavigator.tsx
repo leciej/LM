@@ -2,7 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
-import { AdminPanelScreen } from '../screens/AdminPanelScreen';
+import { AdminStatsStackNavigator } from './AdminStatsStackNavigator';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { AdminProductsStackNavigator } from './AdminProductsStackNavigator';
 import { AdminGalleryStackNavigator } from './AdminGalleryStackNavigator';
@@ -15,16 +15,19 @@ export function AdminTabsNavigator() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarIcon: ({ color, size }) => {
-          const icons: Record<string, string> = {
-            AdminPanel: 'grid-outline',
+          const icons = {
+            AdminStats: 'stats-chart-outline',
             AdminProducts: 'pricetags-outline',
             AdminGallery: 'images-outline',
             AdminProfile: 'person-outline',
-          };
+          } as const;
 
           return (
             <Ionicons
-              name={icons[route.name] ?? 'ellipse-outline'}
+              name={
+                icons[route.name as keyof typeof icons] ??
+                'ellipse-outline'
+              }
               size={size}
               color={color}
             />
@@ -35,9 +38,9 @@ export function AdminTabsNavigator() {
       })}
     >
       <Tab.Screen
-        name="AdminPanel"
-        component={AdminPanelScreen}
-        options={{ title: 'Panel' }}
+        name="AdminStats"
+        component={AdminStatsStackNavigator}
+        options={{ title: 'Statystyki' }}
       />
 
       <Tab.Screen

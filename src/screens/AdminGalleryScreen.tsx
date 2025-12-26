@@ -16,7 +16,6 @@ import {
   subscribe,
   getGallery,
   removeGallery,
-  type GalleryItem,
 } from '../features/gallery/store/galleryStore';
 
 import { addActivity } from '../features/activity/store/activityStore';
@@ -68,13 +67,18 @@ export function AdminGalleryScreen({ navigation }: any) {
         renderItem={({ item }) => (
           <View style={styles.cardWrapper}>
             <View style={styles.card}>
-              <Image source={{ uri: item.image }} style={styles.image} />
+              <Image
+                source={{ uri: item.image }}
+                style={styles.image}
+              />
 
               <View style={styles.info}>
                 <Text style={styles.name} numberOfLines={2}>
                   {item.title}
                 </Text>
-                <Text style={styles.author}>{item.author}</Text>
+                <Text style={styles.author}>
+                  {item.author}
+                </Text>
               </View>
 
               <Pressable
@@ -104,7 +108,11 @@ export function AdminGalleryScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
-  title: { fontSize: 22, fontWeight: '700', marginBottom: 12 },
+  title: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
 
   addButton: {
     backgroundColor: '#1976d2',
@@ -112,13 +120,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 12,
   },
-  addText: { color: '#fff', textAlign: 'center', fontWeight: '600' },
+  addText: {
+    color: '#fff',
+    textAlign: 'center',
+    fontWeight: '600',
+  },
 
   row: {
     justifyContent: 'space-between',
   },
 
-  /* 🔥 KLUCZOWA ZMIANA */
   cardWrapper: {
     width: '48%',
     marginBottom: 12,
@@ -137,10 +148,16 @@ const styles = StyleSheet.create({
   name: { fontSize: 14, fontWeight: '600' },
   author: { fontSize: 12, color: '#666' },
 
-  editButton: { backgroundColor: '#ffa000', paddingVertical: 6 },
+  editButton: {
+    backgroundColor: '#ffa000',
+    paddingVertical: 6,
+  },
   editText: { textAlign: 'center', fontWeight: '600' },
 
-  deleteButton: { backgroundColor: '#d32f2f', paddingVertical: 6 },
+  deleteButton: {
+    backgroundColor: '#d32f2f',
+    paddingVertical: 6,
+  },
   deleteText: {
     color: '#fff',
     textAlign: 'center',
