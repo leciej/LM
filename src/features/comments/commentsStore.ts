@@ -1,3 +1,5 @@
+import { addActivity } from '../activity/store/activityStore';
+
 export type Comment = {
   id: string;
   productId: string;
@@ -9,9 +11,7 @@ export type Comment = {
 let comments: Comment[] = [];
 const listeners = new Set<() => void>();
 
-/* =========================
-   STOCKOWE DANE
-   ========================= */
+/* ===== STOCK ===== */
 
 const STOCK_AUTHORS = [
   'Rudolf H.',
@@ -30,20 +30,17 @@ const STOCK_COMMENTS = [
   'Na żywo musi wyglądać jeszcze lepiej',
 ];
 
-// cache → losowanie stabilne per produkt
 const stockCache: Record<string, Comment[]> = {};
 
 function getStockComments(productId: string): Comment[] {
-  if (stockCache[productId]) {
-    return stockCache[productId];
-  }
+  if (stockCache[productId]) return stockCache[productId];
 
-  const count = Math.floor(Math.random() * 2) + 1; // 1–2
-  const shuffledTexts = [...STOCK_COMMENTS].sort(
+  const count = Math.floor(Math.random() * 2) + 1;
+  const shuffled = [...STOCK_COMMENTS].sort(
     () => 0.5 - Math.random()
   );
 
-  const selected = shuffledTexts.slice(0, count).map(
+  const selected = shuffled.slice(0, count).map(
     (text, index) => ({
       id: `stock-${productId}-${index}`,
       productId,
@@ -60,9 +57,7 @@ function getStockComments(productId: string): Comment[] {
   return selected;
 }
 
-/* =========================
-   SUBSKRYPCJA
-   ========================= */
+/* ===== SUBSCRIBE ===== */
 
 const emit = () => listeners.forEach(l => l());
 
@@ -71,14 +66,12 @@ export function subscribe(listener: () => void) {
   return () => listeners.delete(listener);
 }
 
-/* =========================
-   API
-   ========================= */
+/* ===== API ===== */
 
 export function addCommentToStore(
   productId: string,
   text: string
-): void {
+) {
   comments = [
     ...comments,
     {
@@ -90,30 +83,27 @@ export function addCommentToStore(
     },
   ];
 
+  addActivity('COMMENT');
   emit();
 }
 
 export function getCommentsSnapshot(
   productId: string
 ): Comment[] {
-  const real = comments.filter(
-    c => c.productId === productId
-  );
-
-  const stock = getStockComments(productId);
-
-  return [...stock, ...real];
+  return [
+    ...getStockComments(productId),
+    ...comments.filter(c => c.productId === productId),
+  ];
 }
 
-export function getCommentsCount(): number {
-  // ❗ liczymy tylko realne
+export function getCommentsCount() {
   return comments.length;
 }
 
 export function resetComments() {
   comments = [];
   Object.keys(stockCache).forEach(
-    key => delete stockCache[key]
+    k => delete stockCache[k]
   );
   emit();
 }
