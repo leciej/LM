@@ -13,11 +13,14 @@ import {
   subscribe as subscribeRatings,
   getRatedCount,
   getAverageRating,
+  getRatedCountTotal,
+  getAverageRatingTotal,
 } from '../features/ratings/store/ratingsStore';
 
 import {
   subscribe as subscribeComments,
   getCommentsCount,
+  getCommentsCountTotal,
 } from '../features/comments/commentsStore';
 
 import {
@@ -31,10 +34,7 @@ import {
 
 type Role = 'USER' | 'ADMIN';
 
-const ROLE_META: Record<
-  Role,
-  { label: string; color: string; bg: string }
-> = {
+const ROLE_META: Record<Role, { label: string; color: string; bg: string }> = {
   USER: {
     label: '👤 Użytkownik',
     color: '#2563EB',
@@ -60,11 +60,29 @@ const roleMeta = (role: Role | null) =>
    HELPERS
    ========================= */
 
+const isAdminType = (type: string) =>
+  [
+    'ADD_PRODUCT',
+    'EDIT_PRODUCT',
+    'REMOVE_PRODUCT',
+    'ADD_GALLERY',
+    'EDIT_GALLERY',
+    'REMOVE_GALLERY',
+  ].includes(type);
+
 const label = (type: string) =>
   ({
     COMMENT: '💬 Dodano komentarz',
     RATING: '⭐ Dodano ocenę',
     PURCHASE: '🛒 Złożono zamówienie',
+
+    ADD_PRODUCT: '➕ Dodano produkt',
+    EDIT_PRODUCT: '✏️ Edytowano produkt',
+    REMOVE_PRODUCT: '🗑 Usunięto produkt',
+
+    ADD_GALLERY: '🖼➕ Dodano arcydzieło',
+    EDIT_GALLERY: '🖼✏️ Edytowano arcydzieło',
+    REMOVE_GALLERY: '🖼🗑 Usunięto arcydzieło',
   }[type] ?? '—');
 
 function timeAgo(timestamp: number) {
@@ -83,6 +101,7 @@ function timeAgo(timestamp: number) {
 export function ProfileScreen() {
   const { role, logout, user } = useAuth();
   const meta = roleMeta(role);
+  const isAdmin = role === 'ADMIN';
 
   const purchasedCount = useSyncExternalStore(
     subscribePurchases,
@@ -96,17 +115,17 @@ export function ProfileScreen() {
 
   const ratedCount = useSyncExternalStore(
     subscribeRatings,
-    getRatedCount
+    isAdmin ? getRatedCountTotal : getRatedCount
   );
 
   const avgRating = useSyncExternalStore(
     subscribeRatings,
-    getAverageRating
+    isAdmin ? getAverageRatingTotal : getAverageRating
   );
 
   const commentsCount = useSyncExternalStore(
     subscribeComments,
-    getCommentsCount
+    isAdmin ? getCommentsCountTotal : getCommentsCount
   );
 
   const activities = useSyncExternalStore(
@@ -114,47 +133,28 @@ export function ProfileScreen() {
     getActivities
   );
 
+  const visibleActivities = isAdmin
+    ? activities.filter(a => isAdminType(a.type))
+    : activities.filter(a => !isAdminType(a.type));
+
   return (
     <View style={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
-        <View
-          style={[
-            styles.avatar,
-            { backgroundColor: meta.bg },
-          ]}
-        >
-          <Text
-            style={[
-              styles.avatarText,
-              { color: meta.color },
-            ]}
-          >
+        <View style={[styles.avatar, { backgroundColor: meta.bg }]}>
+          <Text style={[styles.avatarText, { color: meta.color }]}>
             {user?.name?.[0] ?? '👤'}
           </Text>
         </View>
 
         <Text style={styles.title}>
-          {user?.name ?? 'Gość'}
+          {user?.name ?? (isAdmin ? 'Administrator' : 'Gość')}
         </Text>
 
-        <Text style={styles.subtitle}>
-          {user?.email}
-        </Text>
+        <Text style={styles.subtitle}>{user?.email}</Text>
 
-        {/* ROLE BADGE */}
-        <View
-          style={[
-            styles.roleBadge,
-            { backgroundColor: meta.bg },
-          ]}
-        >
-          <Text
-            style={[
-              styles.roleText,
-              { color: meta.color },
-            ]}
-          >
+        <View style={[styles.roleBadge, { backgroundColor: meta.bg }]}>
+          <Text style={[styles.roleText, { color: meta.color }]}>
             {meta.label}
           </Text>
         </View>
@@ -164,21 +164,15 @@ export function ProfileScreen() {
       <View style={styles.dashboard}>
         {/* ACTIVITY */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>
-            Ostatnia aktywność
-          </Text>
+          <Text style={styles.sectionTitle}>Ostatnia aktywność</Text>
 
-          {activities.length === 0 ? (
-            <Text style={styles.muted}>
-              Brak aktywności
-            </Text>
+          {visibleActivities.length === 0 ? (
+            <Text style={styles.muted}>Brak aktywności</Text>
           ) : (
-            activities.map((a, i) => (
+            visibleActivities.map((a, i) => (
               <View key={i} style={styles.activityRow}>
                 <Text>{label(a.type)}</Text>
-                <Text style={styles.time}>
-                  {timeAgo(a.createdAt)}
-                </Text>
+                <Text style={styles.time}>{timeAgo(a.createdAt)}</Text>
               </View>
             ))
           )}
@@ -187,29 +181,20 @@ export function ProfileScreen() {
         {/* STATS */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>
-            Twoje statystyki
+            {isAdmin ? 'Statystyki platformy' : 'Twoje statystyki'}
           </Text>
 
-          <Text>✅ Kupione: {purchasedCount}</Text>
-          <Text>
-            💸 Wydano: {totalSpent.toFixed(2)} zł
-          </Text>
+          <Text>✅ Kupione produkty: {purchasedCount}</Text>
+          <Text>💸 Wydane pieniądze: {totalSpent.toFixed(2)} zł</Text>
           <Text>⭐ Ocenione: {ratedCount}</Text>
-          <Text>
-            ⭐ Średnia: {avgRating.toFixed(1)}
-          </Text>
-          <Text>
-            💬 Komentarze: {commentsCount}
-          </Text>
+          <Text>⭐ Średnia: {avgRating.toFixed(1)}</Text>
+          <Text>💬 Komentarze: {commentsCount}</Text>
         </View>
       </View>
 
       {/* ACTIONS */}
       <View style={styles.actions}>
-        <Button
-          title="Wyloguj się"
-          onPress={logout}
-        />
+        <Button title="Wyloguj się" onPress={logout} />
       </View>
     </View>
   );

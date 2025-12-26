@@ -11,7 +11,9 @@ export type Comment = {
 let comments: Comment[] = [];
 const listeners = new Set<() => void>();
 
-/* ===== STOCK ===== */
+/* =========================
+   STOCK (DEMO)
+   ========================= */
 
 const STOCK_AUTHORS = [
   'Rudolf H.',
@@ -30,12 +32,15 @@ const STOCK_COMMENTS = [
   'Na żywo musi wyglądać jeszcze lepiej',
 ];
 
+/**
+ * Cache → stabilne losowanie per produkt
+ */
 const stockCache: Record<string, Comment[]> = {};
 
 function getStockComments(productId: string): Comment[] {
   if (stockCache[productId]) return stockCache[productId];
 
-  const count = Math.floor(Math.random() * 2) + 1;
+  const count = Math.floor(Math.random() * 2) + 1; // 1–2
   const shuffled = [...STOCK_COMMENTS].sort(
     () => 0.5 - Math.random()
   );
@@ -48,7 +53,9 @@ function getStockComments(productId: string): Comment[] {
       createdAt: 0,
       author:
         STOCK_AUTHORS[
-          Math.floor(Math.random() * STOCK_AUTHORS.length)
+          Math.floor(
+            Math.random() * STOCK_AUTHORS.length
+          )
         ],
     })
   );
@@ -57,7 +64,9 @@ function getStockComments(productId: string): Comment[] {
   return selected;
 }
 
-/* ===== SUBSCRIBE ===== */
+/* =========================
+   SUBSCRIBE
+   ========================= */
 
 const emit = () => listeners.forEach(l => l());
 
@@ -66,7 +75,9 @@ export function subscribe(listener: () => void) {
   return () => listeners.delete(listener);
 }
 
-/* ===== API ===== */
+/* =========================
+   API – USER
+   ========================= */
 
 export function addCommentToStore(
   productId: string,
@@ -88,6 +99,10 @@ export function addCommentToStore(
   emit();
 }
 
+/**
+ * Komentarze do detalu produktu
+ * (stock + real)
+ */
 export function getCommentsSnapshot(
   productId: string
 ): Comment[] {
@@ -97,14 +112,49 @@ export function getCommentsSnapshot(
   ];
 }
 
+/* =========================
+   USER STATS
+   ========================= */
+
+/**
+ * Tylko komentarze użytkownika
+ */
 export function getCommentsCount() {
   return comments.length;
 }
 
+/* =========================
+   ADMIN / TOTAL STATS
+   ========================= */
+
+/**
+ * Liczba komentarzy stockowych (globalnie)
+ */
+function getStockCommentsCount() {
+  return Object.values(stockCache).reduce(
+    (sum, list) => sum + list.length,
+    0
+  );
+}
+
+/**
+ * Łączna liczba komentarzy
+ * (user + stock)
+ */
+export function getCommentsCountTotal() {
+  return (
+    comments.length + getStockCommentsCount()
+  );
+}
+
+/* =========================
+   RESET
+   ========================= */
+
 export function resetComments() {
   comments = [];
   Object.keys(stockCache).forEach(
-    k => delete stockCache[k]
+    key => delete stockCache[key]
   );
   emit();
 }
