@@ -31,15 +31,22 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
 
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
+  const [price, setPrice] = useState('');
   const [image, setImage] = useState<string | undefined>();
   const [imageUrlInput, setImageUrlInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (!editingItem) return;
+
     setTitle(editingItem.title);
     setAuthor(editingItem.author);
     setImage(editingItem.image);
+    setPrice(
+      editingItem.price !== undefined
+        ? String(editingItem.price)
+        : ''
+    );
   }, [editingItem]);
 
   const showToast = (msg: string) => {
@@ -63,11 +70,16 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
   };
 
   const saveGallery = () => {
-    if (!title || !author || !image) {
+    if (!title || !author || !price || !image) {
       Alert.alert(
         'Uzupełnij dane',
-        'Tytuł, autor i obraz są wymagane'
+        'Tytuł, autor, cena i obraz są wymagane'
       );
+      return;
+    }
+
+    if (isNaN(Number(price))) {
+      Alert.alert('Błąd', 'Cena musi być liczbą');
       return;
     }
 
@@ -79,6 +91,7 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
       title,
       author,
       image,
+      price: Number(price),
     };
 
     setTimeout(() => {
@@ -115,6 +128,14 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
         placeholder="Autor"
         value={author}
         onChangeText={setAuthor}
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Cena"
+        keyboardType="numeric"
+        value={price}
+        onChangeText={setPrice}
       />
 
       <Pressable
@@ -159,8 +180,15 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  title: { fontSize: 22, fontWeight: '700', marginBottom: 16 },
+  container: {
+    flex: 1,
+    padding: 16,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 16,
+  },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
@@ -174,7 +202,10 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginBottom: 8,
   },
-  imageText: { color: '#fff', textAlign: 'center' },
+  imageText: {
+    color: '#fff',
+    textAlign: 'center',
+  },
   preview: {
     width: '100%',
     height: 180,
@@ -187,6 +218,11 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     alignItems: 'center',
   },
-  saveText: { color: '#fff', fontWeight: '600' },
-  disabled: { opacity: 0.7 },
+  saveText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  disabled: {
+    opacity: 0.7,
+  },
 });

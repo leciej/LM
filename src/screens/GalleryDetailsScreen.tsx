@@ -34,7 +34,6 @@ const getRandomVotes = () =>
   Math.floor(Math.random() * 5) + 2;
 
 export function GalleryDetailsScreen({ route }: Props) {
-  // 🔑 HOOKI NA GÓRZE
   const { isLoggedIn } = useAuth();
 
   const [average, setAverage] = useState(getRandomRating);
@@ -98,8 +97,8 @@ export function GalleryDetailsScreen({ route }: Props) {
         name: item.title,
         image: item.image,
         artist: item.author,
-        price: 0,
-        description: `Arcydzieło: ${item.title}`, // ✅ WYMAGANE POLE
+        price: item.price, // ✅ KLUCZOWA POPRAWKA
+        description: `Arcydzieło: ${item.title}`,
       },
       'GALLERY'
     );
@@ -158,6 +157,11 @@ export function GalleryDetailsScreen({ route }: Props) {
 
       <Text style={styles.name}>{item.title}</Text>
       <Text style={styles.author}>{item.author}</Text>
+
+      {/* ✅ CENA */}
+      <Text style={styles.price}>
+        {item.price.toFixed(2)} zł
+      </Text>
 
       <Button
         title={
@@ -219,6 +223,12 @@ const styles = StyleSheet.create({
   author: {
     fontSize: 14,
     color: '#666',
+    marginBottom: 4,
+  },
+  price: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#2563EB',
     marginBottom: 12,
   },
   ratingRow: {

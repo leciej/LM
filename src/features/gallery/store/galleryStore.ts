@@ -3,6 +3,7 @@ export type GalleryItem = {
   title: string;
   author: string;
   image: string;
+  price: number; // ✅ DODANE
 };
 
 export const mockGallery: GalleryItem[] = [
@@ -11,12 +12,14 @@ export const mockGallery: GalleryItem[] = [
     title: 'Akwarela Ultramarine Blue – Ambitny Kobalt',
     author: 'Akademia Farb Wodnych',
     image: 'https://picsum.photos/600/400?1',
+    price: 420,
   },
   {
     id: '2',
     title: 'Akwarela Burnt Sienna – Kontrolowany Chaos',
     author: 'Akademia Farb Wodnych',
     image: 'https://picsum.photos/600/400?2',
+    price: 380,
   },
 ];
 
