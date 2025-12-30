@@ -7,7 +7,7 @@ import { GalleryApi } from './gallery';
 export const api = {
   auth: AuthApi,
   products: ProductsApi,
-  artworks: GalleryApi,
+  gallery: GalleryApi,
   cart: CartApi,
   stats: StatsApi,
 };
