@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -11,15 +11,12 @@ import {
   Alert,
 } from 'react-native';
 
-import {
-  mockProducts,
-  Product,
-} from '../features/products/mockProducts';
-
+import type { ProductDto } from '../api/products';
+import { useProducts } from '../features/products/useProducts';
 import { addActivity } from '../features/activity/store/activityStore';
 
 export function AdminProductsScreen({ navigation }: any) {
-  const [products, setProducts] = useState<Product[]>(mockProducts);
+  const { products, loading, error, remove } = useProducts();
 
   const showToast = (message: string) => {
     if (Platform.OS === 'android') {
@@ -27,7 +24,7 @@ export function AdminProductsScreen({ navigation }: any) {
     }
   };
 
-  const removeProduct = (product: Product) => {
+  const removeProduct = (product: ProductDto) => {
     Alert.alert(
       'Usuń produkt',
       `Czy na pewno chcesz usunąć "${product.name}"?`,
@@ -36,11 +33,8 @@ export function AdminProductsScreen({ navigation }: any) {
         {
           text: 'Usuń',
           style: 'destructive',
-          onPress: () => {
-            setProducts(prev =>
-              prev.filter(p => p.id !== product.id)
-            );
-
+          onPress: async () => {
+            await remove(product.id);
             addActivity('REMOVE_PRODUCT');
             showToast('Produkt został usunięty');
           },
@@ -53,6 +47,9 @@ export function AdminProductsScreen({ navigation }: any) {
     <View style={styles.container}>
       <Text style={styles.title}>Produkty</Text>
 
+      {loading && <Text style={styles.subtitle}>Ładowanie...</Text>}
+      {!loading && error && <Text style={styles.subtitle}>{error}</Text>}
+
       <Pressable
         style={styles.addButton}
         onPress={() => navigation.navigate('AddProduct')}
@@ -63,19 +60,23 @@ export function AdminProductsScreen({ navigation }: any) {
       <FlatList
         data={products}
         keyExtractor={item => item.id}
+        ListEmptyComponent={
+          !loading && !error ? (
+            <Text style={styles.subtitle}>Brak produktów</Text>
+          ) : null
+        }
         renderItem={({ item }) => (
           <View style={styles.card}>
             <View style={styles.topRow}>
-              {item.image && (
+              {item.imageUrl && (
                 <Image
-                  source={{ uri: item.image }}
+                  source={{ uri: item.imageUrl }}
                   style={styles.thumbnail}
                 />
               )}
 
               <View style={styles.info}>
                 <Text style={styles.name}>{item.name}</Text>
-                <Text style={styles.artist}>{item.artist}</Text>
                 <Text style={styles.price}>{item.price} zł</Text>
               </View>
             </View>
@@ -106,13 +107,10 @@ export function AdminProductsScreen({ navigation }: any) {
   );
 }
 
-/* =========================
-   STYLES
-   ========================= */
-
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   title: { fontSize: 22, fontWeight: '700', marginBottom: 12 },
+  subtitle: { fontSize: 14, marginBottom: 10 },
   addButton: {
     backgroundColor: '#1976d2',
     padding: 12,
@@ -130,7 +128,6 @@ const styles = StyleSheet.create({
   thumbnail: { width: 80, height: 80, borderRadius: 6, marginRight: 12 },
   info: { flex: 1, justifyContent: 'center' },
   name: { fontSize: 16, fontWeight: '600' },
-  artist: { fontSize: 14, color: '#666' },
   price: { fontSize: 14, marginTop: 4 },
   actions: { gap: 6 },
   editButton: {

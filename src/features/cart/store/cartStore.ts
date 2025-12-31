@@ -1,11 +1,17 @@
-import type { Product } from '../../products/mockProducts';
+import type { ProductDto } from '../../../api/products';
 
 export type Source = 'PRODUCTS' | 'GALLERY';
 
-export type CartItem = Product & {
+/**
+ * Ujednolicony model pozycji w koszyku
+ * — UI używa `image`
+ * — backend daje `imageUrl`
+ */
+export type CartItem = ProductDto & {
   cartItemId: string;
   quantity: number;
   source: Source;
+  image?: string; // 👈 dla UI
 };
 
 let cart: CartItem[] = [];
@@ -22,9 +28,12 @@ export function subscribe(listener: () => void) {
 const createCartItemId = () =>
   Math.random().toString(36).slice(2);
 
-/* ADD */
+/* =========================
+   ADD
+   ========================= */
+
 export function addItemToCart(
-  product: Product,
+  product: ProductDto,
   source: Source
 ): void {
   const existing = cart.find(
@@ -47,6 +56,7 @@ export function addItemToCart(
         cartItemId: createCartItemId(),
         quantity: 1,
         source,
+        image: product.imageUrl, // 👈 MAPOWANIE
       },
     ];
   }
@@ -54,7 +64,10 @@ export function addItemToCart(
   notify();
 }
 
-/* READ */
+/* =========================
+   READ
+   ========================= */
+
 export function getCartSnapshot(): CartItem[] {
   return cart;
 }
@@ -75,7 +88,10 @@ export function getGalleryCount(): number {
     .reduce((s, i) => s + i.quantity, 0);
 }
 
-/* UPDATE / DELETE */
+/* =========================
+   UPDATE / DELETE
+   ========================= */
+
 export function decreaseItemInCart(cartItemId: string): void {
   const existing = cart.find(i => i.cartItemId === cartItemId);
   if (!existing) return;

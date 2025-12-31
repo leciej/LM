@@ -1,60 +1,44 @@
-import { httpRequest } from '../client';
+import { http } from "@/api";
 import {
   ProductDto,
   CreateProductRequestDto,
   UpdateProductRequestDto,
-} from './products.types';
+} from "./products.types";
 
-export class ProductsApi {
-  /**
-   * GET /products
-   */
-  static getAll() {
-    return httpRequest<ProductDto[]>({
-      method: 'GET',
-      url: '/products',
-    });
-  }
+export const ProductsApi = {
+  // GET /api/products
+  getAll: async (): Promise<ProductDto[]> => {
+    const { data } = await http.get<ProductDto[]>("/products");
+    return data;
+  },
 
-  /**
-   * GET /products/:id
-   */
-  static getById(id: string) {
-    return httpRequest<ProductDto>({
-      method: 'GET',
-      url: `/products/${id}`,
-    });
-  }
+  // GET /api/products/{id}
+  getById: async (id: string): Promise<ProductDto> => {
+    const { data } = await http.get<ProductDto>(`/products/${id}`);
+    return data;
+  },
 
-  /**
-   * POST /products
-   */
-  static create(payload: CreateProductRequestDto) {
-    return httpRequest<ProductDto, CreateProductRequestDto>({
-      method: 'POST',
-      url: '/products',
-      body: payload,
-    });
-  }
+  // POST /api/products
+  create: async (
+    payload: CreateProductRequestDto
+  ): Promise<ProductDto> => {
+    const { data } = await http.post<ProductDto>(
+      "/products",
+      payload
+    );
+    return data;
+  },
 
-  /**
-   * PUT /products/:id
-   */
-  static update(id: string, payload: UpdateProductRequestDto) {
-    return httpRequest<ProductDto, UpdateProductRequestDto>({
-      method: 'PUT',
-      url: `/products/${id}`,
-      body: payload,
-    });
-  }
+  // PATCH /api/products/{id}
+  update: async (
+    id: string,
+    payload: UpdateProductRequestDto
+  ): Promise<void> => {
+    await http.patch(`/products/${id}`, payload);
+  },
 
-  /**
-   * DELETE /products/:id
-   */
-  static delete(id: string) {
-    return httpRequest<void>({
-      method: 'DELETE',
-      url: `/products/${id}`,
-    });
-  }
-}
+  // DELETE /api/products/{id}
+  remove: async (id: string): Promise<void> => {
+    await http.delete(`/products/${id}`);
+  },
+};

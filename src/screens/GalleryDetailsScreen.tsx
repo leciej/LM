@@ -8,6 +8,7 @@ import {
   Animated,
   Button,
   ToastAndroid,
+  Platform,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -97,16 +98,18 @@ export function GalleryDetailsScreen({ route }: Props) {
         name: item.title,
         image: item.image,
         artist: item.author,
-        price: item.price, // ✅ KLUCZOWA POPRAWKA
+        price: item.price,
         description: `Arcydzieło: ${item.title}`,
       },
       'GALLERY'
     );
 
-    ToastAndroid.show(
-      `Dodano "${item.title}" do koszyka`,
-      ToastAndroid.SHORT
-    );
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(
+        `Dodano "${item.title}" do koszyka`,
+        ToastAndroid.SHORT
+      );
+    }
   };
 
   const renderStaticStars = (value: number) =>
@@ -158,7 +161,6 @@ export function GalleryDetailsScreen({ route }: Props) {
       <Text style={styles.name}>{item.title}</Text>
       <Text style={styles.author}>{item.author}</Text>
 
-      {/* ✅ CENA */}
       <Text style={styles.price}>
         {item.price.toFixed(2)} zł
       </Text>
@@ -173,7 +175,6 @@ export function GalleryDetailsScreen({ route }: Props) {
         onPress={handleAddToCart}
       />
 
-      {/* ŚREDNIA OCENA */}
       <View style={styles.ratingRow}>
         <View style={styles.starsRow}>
           {renderStaticStars(Math.round(average))}
@@ -183,7 +184,6 @@ export function GalleryDetailsScreen({ route }: Props) {
         </Text>
       </View>
 
-      {/* TWOJA OCENA */}
       <Text style={styles.sectionTitle}>
         {myRating ? 'Twoja ocena' : 'Oceń arcydzieło'}
       </Text>

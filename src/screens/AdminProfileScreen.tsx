@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, Text, Button, StyleSheet, Pressable } from 'react-native';
+import {
+  View,
+  Text,
+  Button,
+  StyleSheet,
+  Pressable,
+} from 'react-native';
 import { useSyncExternalStore } from 'react';
 import { useAuth } from '../auth/AuthContext';
 
@@ -46,12 +52,22 @@ function timeAgo(timestamp: number) {
    ========================= */
 
 export function AdminProfileScreen({ navigation }: any) {
-  const { logout, user } = useAuth();
+  // ✅ HOOKI ZAWSZE NA GÓRZE
+  const { logout, user, role } = useAuth();
 
   const activities = useSyncExternalStore(
     subscribeActivity,
     getActivities
   ).filter(a => isAdminType(a.type));
+
+  // ✅ GUARD DOPIERO PO HOOKACH
+  if (role !== 'ADMIN') {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.muted}>Brak dostępu</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -78,7 +94,9 @@ export function AdminProfileScreen({ navigation }: any) {
       <View style={styles.dashboard}>
         {/* OSTATNIA AKTYWNOŚĆ */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Ostatnia aktywność</Text>
+          <Text style={styles.sectionTitle}>
+            Ostatnia aktywność
+          </Text>
 
           {activities.length === 0 ? (
             <Text style={styles.muted}>Brak aktywności</Text>
@@ -101,28 +119,26 @@ export function AdminProfileScreen({ navigation }: any) {
           <Pressable
             style={styles.actionButton}
             onPress={() =>
-              navigation.navigate('AdminProducts', {
-                screen: 'AddProduct',
-              })
+              navigation.navigate('AdminProducts')
             }
           >
-            <Text style={styles.actionText}>➕ Dodaj produkt</Text>
+            <Text style={styles.actionText}>📦 Produkty</Text>
           </Pressable>
 
           <Pressable
             style={styles.actionButton}
             onPress={() =>
-              navigation.navigate('AdminGallery', {
-                screen: 'AddGallery',
-              })
+              navigation.navigate('AdminGallery')
             }
           >
-            <Text style={styles.actionText}>🖼 Dodaj arcydzieło</Text>
+            <Text style={styles.actionText}>🖼 Arcydzieła</Text>
           </Pressable>
 
           <Pressable
             style={styles.actionButtonSecondary}
-            onPress={() => navigation.navigate('AdminStats')}
+            onPress={() =>
+              navigation.navigate('AdminStats')
+            }
           >
             <Text style={styles.actionText}>📊 Statystyki</Text>
           </Pressable>
@@ -146,6 +162,11 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 24,
     justifyContent: 'space-between',
+  },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     alignItems: 'center',

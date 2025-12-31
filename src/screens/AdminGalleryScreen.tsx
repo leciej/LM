@@ -21,7 +21,7 @@ import {
 import { addActivity } from '../features/activity/store/activityStore';
 
 export function AdminGalleryScreen({ navigation }: any) {
-  const items = useSyncExternalStore(subscribe, getGallery);
+  const items = useSyncExternalStore(subscribe, getGallery) ?? [];
 
   const showToast = (msg: string) => {
     if (Platform.OS === 'android') {
@@ -64,16 +64,26 @@ export function AdminGalleryScreen({ navigation }: any) {
         keyExtractor={item => item.id}
         numColumns={2}
         columnWrapperStyle={styles.row}
+        ListEmptyComponent={
+          <Text style={styles.empty}>
+            Brak arcydzieł
+          </Text>
+        }
         renderItem={({ item }) => (
           <View style={styles.cardWrapper}>
             <View style={styles.card}>
-              <Image
-                source={{ uri: item.image }}
-                style={styles.image}
-              />
+              {item.image && (
+                <Image
+                  source={{ uri: item.image }}
+                  style={styles.image}
+                />
+              )}
 
               <View style={styles.info}>
-                <Text style={styles.name} numberOfLines={2}>
+                <Text
+                  style={styles.name}
+                  numberOfLines={2}
+                >
                   {item.title}
                 </Text>
                 <Text style={styles.author}>
@@ -89,14 +99,18 @@ export function AdminGalleryScreen({ navigation }: any) {
                   })
                 }
               >
-                <Text style={styles.editText}>Edytuj</Text>
+                <Text style={styles.editText}>
+                  Edytuj
+                </Text>
               </Pressable>
 
               <Pressable
                 style={styles.deleteButton}
                 onPress={() => removeItem(item.id)}
               >
-                <Text style={styles.deleteText}>Usuń</Text>
+                <Text style={styles.deleteText}>
+                  Usuń
+                </Text>
               </Pressable>
             </View>
           </View>
@@ -142,7 +156,10 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
 
-  image: { width: '100%', height: 120 },
+  image: {
+    width: '100%',
+    height: 120,
+  },
 
   info: { padding: 8 },
   name: { fontSize: 14, fontWeight: '600' },
@@ -152,7 +169,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffa000',
     paddingVertical: 6,
   },
-  editText: { textAlign: 'center', fontWeight: '600' },
+  editText: {
+    textAlign: 'center',
+    fontWeight: '600',
+  },
 
   deleteButton: {
     backgroundColor: '#d32f2f',
@@ -162,5 +182,11 @@ const styles = StyleSheet.create({
     color: '#fff',
     textAlign: 'center',
     fontWeight: '600',
+  },
+
+  empty: {
+    textAlign: 'center',
+    marginTop: 40,
+    color: '#666',
   },
 });

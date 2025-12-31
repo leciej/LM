@@ -18,3 +18,4 @@ export * from './products';
 export * from './gallery';
 export * from './cart';
 export * from './stats';
+export * from "./http";

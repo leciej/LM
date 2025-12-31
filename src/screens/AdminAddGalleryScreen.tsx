@@ -17,15 +17,16 @@ import {
   getGallery,
   addGallery,
   updateGallery,
-  GalleryItem,
+  type GalleryItem,
 } from '../features/gallery/store/galleryStore';
 
 import { addActivity } from '../features/activity/store/activityStore';
 
 export function AdminAddGalleryScreen({ navigation, route }: any) {
-  const editingId = route?.params?.galleryId;
+  const editingId: string | undefined =
+    route?.params?.galleryId;
 
-  const editingItem = editingId
+  const editingItem: GalleryItem | undefined = editingId
     ? getGallery().find(g => g.id === editingId)
     : undefined;
 
@@ -56,7 +57,10 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
   };
 
   const pickImage = async () => {
-    const result = await launchImageLibrary({ mediaType: 'photo' });
+    const result = await launchImageLibrary({
+      mediaType: 'photo',
+    });
+
     if (result.assets?.[0]?.uri) {
       setImage(result.assets[0].uri);
       setImageUrlInput('');
@@ -107,13 +111,15 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
 
       setIsSaving(false);
       navigation.goBack();
-    }, 600);
+    }, 300);
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>
-        {editingId ? 'Edytuj arcydzieło' : 'Dodaj arcydzieło'}
+        {editingId
+          ? 'Edytuj arcydzieło'
+          : 'Dodaj arcydzieło'}
       </Text>
 
       <TextInput
@@ -144,7 +150,7 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
         disabled={isSaving}
       >
         <Text style={styles.imageText}>
-          Wybierz obraz z dysku
+          Wybierz obraz z galerii
         </Text>
       </Pressable>
 
@@ -158,7 +164,10 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
       />
 
       {image && (
-        <Image source={{ uri: image }} style={styles.preview} />
+        <Image
+          source={{ uri: image }}
+          style={styles.preview}
+        />
       )}
 
       <Pressable
@@ -172,7 +181,9 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
         {isSaving ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.saveText}>Zapisz</Text>
+          <Text style={styles.saveText}>
+            Zapisz
+          </Text>
         )}
       </Pressable>
     </View>

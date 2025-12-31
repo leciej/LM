@@ -21,10 +21,8 @@ export function GalleryScreen() {
   const navigation = useNavigation<any>();
   const scalesRef = useRef<Record<string, Animated.Value>>({});
 
-  const gallery = useSyncExternalStore(
-    subscribe,
-    getGallery
-  );
+  const gallery =
+    useSyncExternalStore(subscribe, getGallery) ?? [];
 
   const getScale = (id: string) => {
     if (!scalesRef.current[id]) {
@@ -60,6 +58,11 @@ export function GalleryScreen() {
         numColumns={2}
         keyExtractor={(item: GalleryItem) => item.id}
         columnWrapperStyle={styles.row}
+        ListEmptyComponent={
+          <Text style={styles.empty}>
+            Brak arcydzieł
+          </Text>
+        }
         renderItem={({ item }) => (
           <Pressable
             style={styles.cardPressable}
@@ -70,16 +73,25 @@ export function GalleryScreen() {
             <Animated.View
               style={[
                 styles.card,
-                { transform: [{ scale: getScale(item.id) }] },
+                {
+                  transform: [
+                    { scale: getScale(item.id) },
+                  ],
+                },
               ]}
             >
-              <Image
-                source={{ uri: item.image }}
-                style={styles.image}
-              />
+              {item.image && (
+                <Image
+                  source={{ uri: item.image }}
+                  style={styles.image}
+                />
+              )}
 
               <View style={styles.textBox}>
-                <Text style={styles.name} numberOfLines={1}>
+                <Text
+                  style={styles.name}
+                  numberOfLines={1}
+                >
                   {item.title}
                 </Text>
                 <Text
@@ -98,7 +110,7 @@ export function GalleryScreen() {
 }
 
 /* =========================
-   STYLES (BEZ ZMIAN)
+   STYLES
    ========================= */
 
 const styles = StyleSheet.create({
@@ -135,5 +147,10 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 12,
     marginTop: 2,
+  },
+  empty: {
+    textAlign: 'center',
+    marginTop: 40,
+    color: '#666',
   },
 });

@@ -11,7 +11,7 @@ import {
   subscribe as gallerySubscribe,
 } from '../features/gallery/store/galleryStore';
 
-import { mockProducts } from '../features/products/mockProducts';
+import { useProducts } from '../features/products/useProducts';
 
 import {
   subscribe as subscribePurchases,
@@ -81,7 +81,7 @@ export function AdminStatsScreen() {
       getCommentsCountTotal
     ) ?? 0;
 
-  const products = mockProducts ?? [];
+  const { products } = useProducts();
 
   const series = useMemo(
     () => [2, 4, 1, 7, 3, 6, 4],

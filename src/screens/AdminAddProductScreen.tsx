@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -13,41 +13,57 @@ import {
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 
-import { mockProducts } from '../features/products/mockProducts';
+import type {
+  CreateProductRequestDto,
+  UpdateProductRequestDto,
+  ProductDto,
+} from '../api/products';
+import { useProducts } from '../features/products/useProducts';
 import { addActivity } from '../features/activity/store/activityStore';
 
 export function AdminAddProductScreen({ navigation, route }: any) {
-  const editingProductId = route?.params?.productId;
-  const editingProduct = editingProductId
-    ? mockProducts.find(p => p.id === editingProductId)
-    : undefined;
+  const editingProductId: string | undefined =
+    route?.params?.productId;
 
-  const [name, setName] = useState(editingProduct?.name ?? '');
-  const [artist, setArtist] = useState(editingProduct?.artist ?? '');
-  const [price, setPrice] = useState(
-    editingProduct ? String(editingProduct.price) : ''
-  );
-  const [description, setDescription] = useState(
-    editingProduct?.description ?? ''
-  );
-  const [image, setImage] = useState<string | undefined>(
-    editingProduct?.image
+  const { products, add, update } = useProducts();
+
+  const editingProduct: ProductDto | undefined =
+    editingProductId
+      ? products.find(p => p.id === editingProductId)
+      : undefined;
+
+  const [name, setName] = useState('');
+  const [price, setPrice] = useState('');
+  const [description, setDescription] = useState('');
+  const [imageUrl, setImageUrl] = useState<string | undefined>(
+    undefined
   );
   const [imageUrlInput, setImageUrlInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
+  useEffect(() => {
+    if (!editingProduct) return;
+
+    setName(editingProduct.name);
+    setPrice(String(editingProduct.price));
+    setDescription(editingProduct.description ?? '');
+    setImageUrl(editingProduct.imageUrl);
+  }, [editingProduct]);
+
   const pickImage = async () => {
-    const result = await launchImageLibrary({ mediaType: 'photo' });
+    const result = await launchImageLibrary({
+      mediaType: 'photo',
+    });
 
     if (result.assets?.[0]?.uri) {
-      setImage(result.assets[0].uri);
+      setImageUrl(result.assets[0].uri);
       setImageUrlInput('');
     }
   };
 
   const applyImageUrl = () => {
     if (imageUrlInput.trim()) {
-      setImage(imageUrlInput.trim());
+      setImageUrl(imageUrlInput.trim());
     }
   };
 
@@ -57,53 +73,59 @@ export function AdminAddProductScreen({ navigation, route }: any) {
     }
   };
 
-  const saveProduct = () => {
-    if (!name || !artist || !price || !description) {
+  const saveProduct = async () => {
+    if (!name.trim() || !price.trim()) {
       Alert.alert(
-        'Uzupełnij dane',
-        'Wszystkie pola są wymagane'
+        'Błąd',
+        'Uzupełnij nazwę i cenę.'
       );
       return;
     }
 
-    if (isSaving) return;
+    try {
+      setIsSaving(true);
 
-    setIsSaving(true);
-
-    // 🔄 symulacja backendu
-    setTimeout(() => {
-      if (editingProduct) {
-        editingProduct.name = name;
-        editingProduct.artist = artist;
-        editingProduct.price = Number(price);
-        editingProduct.description = description;
-        editingProduct.image = image;
-
-        addActivity('EDIT_PRODUCT');
-        showToast('Zapisano zmiany produktu');
-      } else {
-        mockProducts.push({
-          id: Date.now().toString(),
-          name,
-          artist,
+      if (editingProductId) {
+        const payload: UpdateProductRequestDto = {
+          name: name.trim(),
           price: Number(price),
-          description,
-          image,
-        });
+          description: description.trim(),
+          imageUrl,
+        };
 
+        await update(editingProductId, payload);
+        addActivity('EDIT_PRODUCT');
+        showToast('Zaktualizowano produkt');
+      } else {
+        const payload: CreateProductRequestDto = {
+          name: name.trim(),
+          price: Number(price),
+          description: description.trim(),
+          imageUrl,
+        };
+
+        await add(payload);
         addActivity('ADD_PRODUCT');
-        showToast('Dodano nowy produkt');
+        showToast('Dodano produkt');
       }
 
-      setIsSaving(false);
       navigation.goBack();
-    }, 700);
+    } catch (e: any) {
+      Alert.alert(
+        'Błąd',
+        e?.message ?? 'Nie udało się zapisać produktu'
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>
-        {editingProduct ? 'Edytuj produkt' : 'Dodaj produkt'}
+        {editingProduct
+          ? 'Edytuj produkt'
+          : 'Dodaj produkt'}
       </Text>
 
       <TextInput
@@ -111,13 +133,6 @@ export function AdminAddProductScreen({ navigation, route }: any) {
         placeholder="Nazwa"
         value={name}
         onChangeText={setName}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Artysta"
-        value={artist}
-        onChangeText={setArtist}
       />
 
       <TextInput
@@ -142,7 +157,7 @@ export function AdminAddProductScreen({ navigation, route }: any) {
         disabled={isSaving}
       >
         <Text style={styles.imageText}>
-          Wybierz obraz z dysku
+          Wybierz obraz z galerii
         </Text>
       </Pressable>
 
@@ -155,8 +170,11 @@ export function AdminAddProductScreen({ navigation, route }: any) {
         editable={!isSaving}
       />
 
-      {image && (
-        <Image source={{ uri: image }} style={styles.preview} />
+      {imageUrl && (
+        <Image
+          source={{ uri: imageUrl }}
+          style={styles.preview}
+        />
       )}
 
       <Pressable

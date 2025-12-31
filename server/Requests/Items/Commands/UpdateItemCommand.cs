@@ -1,0 +1,18 @@
+﻿using MediatR;
+
+namespace SolutionOrdersReact.Server.Requests.Items.Commands
+{
+    public class UpdateItemCommand : IRequest<Unit>  // Unit = void
+    {
+        public int IdItem { get; set; }
+        public string? Name { get; set; }
+        public string? Description { get; set; }
+        public int IdCategory { get; set; }
+        public decimal? Price { get; set; }
+        public decimal? Quantity { get; set; }
+        public string? FotoUrl { get; set; }
+        public int? IdUnitOfMeasurement { get; set; }
+        public string? Code { get; set; }
+        public bool IsActive { get; set; }
+    }
+}

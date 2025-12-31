@@ -6,13 +6,15 @@ import {
   Button,
   FlatList,
   TextInput,
-  ToastAndroid,
   Image,
   ScrollView,
+  ToastAndroid,
+  Platform,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { mockProducts } from '../features/products/mockProducts';
+import type { ProductsStackParamList } from '../navigation/tabs/ProductsStackNavigator';
+import type { Product } from '../features/products/mockProducts';
 import { addItemToCart } from '../features/cart/store/cartStore';
 import {
   addCommentToStore,
@@ -20,49 +22,26 @@ import {
 } from '../features/comments/commentsStore';
 import { useAuth } from '../auth/AuthContext';
 import type { Comment } from '../features/comments/commentsStore';
-import type { Source } from '../features/cart/store/cartStore';
-
-/* =========================
-   NAV TYPES
-   ========================= */
-
-type ProductsStackParamList = {
-  Products: undefined;
-  ProductDetails: {
-    productId: string;
-    source: Source;
-  };
-};
 
 type Props = NativeStackScreenProps<
   ProductsStackParamList,
   'ProductDetails'
 >;
 
-/* =========================
-   SCREEN
-   ========================= */
-
 export function ProductDetailsScreen({ route }: Props) {
-  const { productId, source } = route.params;
-
-  const product = mockProducts.find(p => p.id === productId);
-
+  const { product: dto, source } = route.params;
   const { isLoggedIn, user } = useAuth();
-
   const [commentText, setCommentText] = useState('');
-  const [version, setVersion] = useState(0);
-  const refresh = () => setVersion(v => v + 1);
 
-  if (!product) {
-    return (
-      <View style={styles.container}>
-        <Text>Nie znaleziono produktu</Text>
-      </View>
-    );
-  }
+  const product: Product = {
+    id: dto.id,
+    name: dto.name,
+    artist: '—',
+    price: dto.price,
+    description: dto.description ?? '',
+    image: dto.imageUrl,
+  };
 
-  /* ✅ JEDYNE ŹRÓDŁO KOMENTARZY */
   const comments = getCommentsSnapshot(product.id);
 
   const handleAddToCart = () => {
@@ -70,10 +49,12 @@ export function ProductDetailsScreen({ route }: Props) {
 
     addItemToCart(product, source);
 
-    ToastAndroid.show(
-      `Dodano "${product.name}"`,
-      ToastAndroid.SHORT
-    );
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(
+        `Dodano "${product.name}"`,
+        ToastAndroid.SHORT
+      );
+    }
   };
 
   const handleAddComment = () => {
@@ -83,16 +64,14 @@ export function ProductDetailsScreen({ route }: Props) {
     addCommentToStore(
       product.id,
       commentText.trim(),
-      user.name // 👈 IMIĘ Z REJESTRACJI
+      user.name
     );
 
     setCommentText('');
-    refresh();
   };
 
   return (
     <ScrollView style={styles.container}>
-      {/* HERO */}
       <View style={styles.hero}>
         {product.image && (
           <Image
@@ -104,7 +83,11 @@ export function ProductDetailsScreen({ route }: Props) {
         <View style={styles.info}>
           <Text style={styles.name}>{product.name}</Text>
           <Text style={styles.price}>{product.price} zł</Text>
-          <Text style={styles.desc}>{product.description}</Text>
+          {product.description && (
+            <Text style={styles.desc}>
+              {product.description}
+            </Text>
+          )}
         </View>
       </View>
 
@@ -122,22 +105,15 @@ export function ProductDetailsScreen({ route }: Props) {
 
       <FlatList
         data={comments}
-        extraData={version}
         keyExtractor={(item: Comment) => item.id}
         renderItem={({ item }) => (
           <View style={styles.comment}>
-            {/* 👤 AUTOR */}
-            <Text style={styles.author}>
-              {item.author}
-            </Text>
-
+            <Text style={styles.author}>{item.author}</Text>
             <Text>{item.text}</Text>
           </View>
         )}
         ListEmptyComponent={
-          <Text style={styles.empty}>
-            Brak komentarzy
-          </Text>
+          <Text style={styles.empty}>Brak komentarzy</Text>
         }
         scrollEnabled={false}
       />
@@ -167,49 +143,24 @@ export function ProductDetailsScreen({ route }: Props) {
   );
 }
 
-/* =========================
-   STYLES
-   ========================= */
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
-  hero: {
-    flexDirection: 'row',
-    marginBottom: 20,
-  },
+  container: { flex: 1, padding: 16 },
+  hero: { flexDirection: 'row', marginBottom: 20 },
   image: {
     width: '25%',
     aspectRatio: 1,
     borderRadius: 14,
-    backgroundColor: '#eee',
-    resizeMode: 'contain',
     marginRight: 16,
+    backgroundColor: '#eee',
   },
-  info: {
-    width: '75%',
-    justifyContent: 'center',
-  },
-  name: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  price: {
-    fontSize: 16,
-    marginBottom: 8,
-  },
-  desc: {
-    fontSize: 14,
-    color: '#555',
-  },
+  info: { width: '75%' },
+  name: { fontSize: 20, fontWeight: '700' },
+  price: { marginBottom: 8 },
+  desc: { color: '#555' },
   sectionTitle: {
     marginTop: 24,
     fontSize: 18,
     fontWeight: '700',
-    marginBottom: 8,
   },
   comment: {
     padding: 8,
@@ -217,16 +168,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginBottom: 6,
   },
-  author: {
-    fontWeight: '700',
-    marginBottom: 2,
-    color: '#111',
-  },
-  empty: {
-    fontStyle: 'italic',
-    color: '#666',
-    marginBottom: 8,
-  },
+  author: { fontWeight: '700' },
+  empty: { fontStyle: 'italic', color: '#666' },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',

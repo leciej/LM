@@ -7,19 +7,14 @@ import {
   StyleSheet,
   Image,
   ToastAndroid,
+  Platform,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { mockProducts, Product } from '../features/products/mockProducts';
+import type { ProductDto } from '../api/products';
+import { useProducts } from '../features/products/useProducts';
 import { addItemToCart } from '../features/cart/store/cartStore';
-
-type ProductsStackParamList = {
-  Products: undefined;
-  ProductDetails: {
-    productId: string;
-    source?: 'PRODUCTS' | 'GALLERY';
-  };
-};
+import type { ProductsStackParamList } from '../navigation/tabs/ProductsStackNavigator';
 
 type Props = NativeStackScreenProps<
   ProductsStackParamList,
@@ -27,41 +22,57 @@ type Props = NativeStackScreenProps<
 >;
 
 export function ProductsScreen({ navigation }: Props) {
-  const handleAddToCart = (product: Product) => {
-    addItemToCart(product, 'PRODUCTS');
+  const { products, loading, error } = useProducts();
 
-    ToastAndroid.show(
-      `Dodano "${product.name}"`,
-      ToastAndroid.SHORT
+  const handleAddToCart = (product: ProductDto) => {
+    addItemToCart(
+      {
+        id: product.id,
+        name: product.name,
+        artist: '—',
+        price: product.price,
+        description: product.description ?? '',
+        image: product.imageUrl,
+      },
+      'PRODUCTS'
     );
+
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(
+        `Dodano "${product.name}"`,
+        ToastAndroid.SHORT
+      );
+    }
   };
 
   return (
     <View style={styles.container}>
+      {loading && <Text>Ładowanie…</Text>}
+      {error && <Text>{error}</Text>}
+
       <FlatList
-        data={mockProducts}
+        data={products}
         keyExtractor={item => item.id}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Pressable
               onPress={() =>
                 navigation.navigate('ProductDetails', {
-                  productId: item.id,
-                  source: 'PRODUCTS', // 🔥 KLUCZOWE
+                  product: item,
+                  source: 'PRODUCTS',
                 })
               }
             >
               <View style={styles.row}>
-                {item.image && (
+                {item.imageUrl && (
                   <Image
-                    source={{ uri: item.image }}
+                    source={{ uri: item.imageUrl }}
                     style={styles.thumb}
                   />
                 )}
 
                 <View>
                   <Text style={styles.name}>{item.name}</Text>
-                  <Text style={styles.artist}>{item.artist}</Text>
                   <Text>{item.price} zł</Text>
                 </View>
               </View>
@@ -83,44 +94,27 @@ export function ProductsScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
-
+  container: { flex: 1, padding: 16 },
   card: {
     backgroundColor: '#f2f2f2',
     borderRadius: 8,
     padding: 8,
     marginBottom: 12,
   },
-
-  row: {
-    flexDirection: 'row',
-  },
-
+  row: { flexDirection: 'row' },
   thumb: {
     width: 80,
     height: 80,
     borderRadius: 6,
     marginRight: 12,
   },
-
-  name: {
-    fontWeight: '700',
-  },
-
-  artist: {
-    color: '#666',
-  },
-
+  name: { fontWeight: '700' },
   btn: {
     marginTop: 8,
     backgroundColor: '#2e7d32',
     padding: 10,
     borderRadius: 6,
   },
-
   btnText: {
     color: '#fff',
     textAlign: 'center',
