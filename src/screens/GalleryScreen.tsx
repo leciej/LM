@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,20 +9,18 @@ import {
   Animated,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useSyncExternalStore } from 'react';
+import { observer } from 'mobx-react-lite';
 
-import {
-  subscribe,
-  getGallery,
-  type GalleryItem,
-} from '../features/gallery/store/galleryStore';
+import { galleryStore } from '@/features/gallery/store/galleryStore';
+import { GalleryItemDto } from '@/api/gallery';
 
-export function GalleryScreen() {
+function GalleryScreen() {
   const navigation = useNavigation<any>();
   const scalesRef = useRef<Record<string, Animated.Value>>({});
 
-  const gallery =
-    useSyncExternalStore(subscribe, getGallery) ?? [];
+  useEffect(() => {
+    galleryStore.loadGallery();
+  }, []);
 
   const getScale = (id: string) => {
     if (!scalesRef.current[id]) {
@@ -51,12 +49,20 @@ export function GalleryScreen() {
     });
   };
 
+  if (galleryStore.isLoading) {
+    return (
+      <View style={styles.center}>
+        <Text>Loading gallery…</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <FlatList
-        data={gallery}
+        data={galleryStore.items}
         numColumns={2}
-        keyExtractor={(item: GalleryItem) => item.id}
+        keyExtractor={(item: GalleryItemDto) => item.id}
         columnWrapperStyle={styles.row}
         ListEmptyComponent={
           <Text style={styles.empty}>
@@ -80,12 +86,10 @@ export function GalleryScreen() {
                 },
               ]}
             >
-              {item.image && (
-                <Image
-                  source={{ uri: item.image }}
-                  style={styles.image}
-                />
-              )}
+              <Image
+                source={{ uri: item.image }}
+                style={styles.image}
+              />
 
               <View style={styles.textBox}>
                 <Text
@@ -94,11 +98,8 @@ export function GalleryScreen() {
                 >
                   {item.title}
                 </Text>
-                <Text
-                  style={styles.author}
-                  numberOfLines={1}
-                >
-                  {item.author}
+                <Text style={styles.author} numberOfLines={1}>
+                  {item.artist}
                 </Text>
               </View>
             </Animated.View>
@@ -109,8 +110,10 @@ export function GalleryScreen() {
   );
 }
 
+export default observer(GalleryScreen);
+
 /* =========================
-   STYLES
+   STYLES (BEZ ZMIAN)
    ========================= */
 
 const styles = StyleSheet.create({
@@ -118,6 +121,11 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: '#f5f6f8',
+  },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   row: {
     justifyContent: 'space-between',

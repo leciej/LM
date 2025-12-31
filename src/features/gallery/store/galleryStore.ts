@@ -1,55 +1,37 @@
-export type GalleryItem = {
-  id: string;
-  title: string;
-  author: string;
-  image: string;
-  price: number; // ✅ DODANE
-};
+import { makeAutoObservable, runInAction } from 'mobx';
+import { GalleryItemDto } from '@/api/gallery';
+import { getGalleryItemsQuery } from '../queries/getGalleryItems';
 
-export const mockGallery: GalleryItem[] = [
-  {
-    id: '1',
-    title: 'Akwarela Ultramarine Blue – Ambitny Kobalt',
-    author: 'Akademia Farb Wodnych',
-    image: 'https://picsum.photos/600/400?1',
-    price: 420,
-  },
-  {
-    id: '2',
-    title: 'Akwarela Burnt Sienna – Kontrolowany Chaos',
-    author: 'Akademia Farb Wodnych',
-    image: 'https://picsum.photos/600/400?2',
-    price: 380,
-  },
-];
+class GalleryStore {
+  items: GalleryItemDto[] = [];
+  isLoading = false;
+  error: string | null = null;
 
-let gallery = [...mockGallery];
-const listeners = new Set<() => void>();
+  constructor() {
+    makeAutoObservable(this);
+  }
 
-const emit = () => listeners.forEach(l => l());
+  async loadGallery() {
+    this.isLoading = true;
+    this.error = null;
 
-export function subscribe(listener: () => void) {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
+    try {
+      const data = await getGalleryItemsQuery();
+
+      runInAction(() => {
+        this.items = data;
+      });
+    } catch (err) {
+      runInAction(() => {
+        this.error = 'Failed to load gallery';
+      });
+      console.error('Gallery load error', err);
+    } finally {
+      runInAction(() => {
+        this.isLoading = false;
+      });
+    }
+  }
 }
 
-export function getGallery() {
-  return gallery;
-}
-
-export function addGallery(item: GalleryItem) {
-  gallery = [item, ...gallery];
-  emit();
-}
-
-export function updateGallery(item: GalleryItem) {
-  gallery = gallery.map(g =>
-    g.id === item.id ? item : g
-  );
-  emit();
-}
-
-export function removeGallery(id: string) {
-  gallery = gallery.filter(g => g.id !== id);
-  emit();
-}
+export const galleryStore = new GalleryStore();
