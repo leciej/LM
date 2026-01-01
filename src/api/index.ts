@@ -1,8 +1,9 @@
-import { AuthApi } from './auth';
-import { ProductsApi } from './products';
-import { CartApi } from './cart';
-import { StatsApi } from './stats';
-import { GalleryApi } from './gallery';
+import { AuthApi } from "./auth";
+import { CartApi } from "./cart";
+import { GalleryApi } from "./gallery";
+import { StatsApi } from "./stats";
+
+import * as ProductsApi from "./products";
 
 export const api = {
   auth: AuthApi,
@@ -12,10 +13,10 @@ export const api = {
   stats: StatsApi,
 };
 
-export * from './client';
-export * from './auth';
-export * from './products';
-export * from './gallery';
-export * from './cart';
-export * from './stats';
+export * from "./client";
+export * from "./auth";
+export * from "./products";
+export * from "./gallery";
+export * from "./cart";
+export * from "./stats";
 export * from "./http";

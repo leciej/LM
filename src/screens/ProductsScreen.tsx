@@ -50,7 +50,7 @@ export function ProductsScreen({ navigation }: Props) {
     }
   };
 
-  if (loading) {
+  if (loading && products.length === 0) {
     return (
       <View style={styles.center}>
         <Text>Ładowanie produktów…</Text>
@@ -58,7 +58,7 @@ export function ProductsScreen({ navigation }: Props) {
     );
   }
 
-  if (error) {
+  if (error && products.length === 0) {
     return (
       <View style={styles.center}>
         <Text>{error}</Text>
@@ -121,6 +121,12 @@ export function ProductsScreen({ navigation }: Props) {
           );
         }}
       />
+
+      {error && products.length > 0 && (
+        <Text style={styles.softError}>
+          {error}
+        </Text>
+      )}
     </View>
   );
 }
@@ -196,5 +202,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     textAlign: 'center',
     fontWeight: '700',
+  },
+
+  softError: {
+    textAlign: 'center',
+    marginTop: 8,
+    color: '#888',
+    fontSize: 12,
   },
 });
