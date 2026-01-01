@@ -13,114 +13,134 @@ import {
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 
-import {
-  getGallery,
-  addGallery,
-  updateGallery,
-  type GalleryItem,
-} from '../features/gallery/store/galleryStore';
+import type {
+  GalleryItemDto,
+  CreateGalleryItemRequestDto,
+  UpdateGalleryItemRequestDto,
+} from '../api/gallery';
 
+import { GalleryApi } from '../api/gallery';
 import { addActivity } from '../features/activity/store/activityStore';
 
 export function AdminAddGalleryScreen({ navigation, route }: any) {
-  const editingId: string | undefined =
+  const editingGalleryId: string | undefined =
     route?.params?.galleryId;
 
-  const editingItem: GalleryItem | undefined = editingId
-    ? getGallery().find(g => g.id === editingId)
-    : undefined;
+  const [editingItem, setEditingItem] =
+    useState<GalleryItemDto | null>(null);
 
   const [title, setTitle] = useState('');
-  const [author, setAuthor] = useState('');
+  const [artist, setArtist] = useState('');
   const [price, setPrice] = useState('');
-  const [image, setImage] = useState<string | undefined>();
+  const [imageUrl, setImageUrl] = useState<string | undefined>();
   const [imageUrlInput, setImageUrlInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!editingGalleryId) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        setIsLoading(true);
+        const remote = await GalleryApi.getById(editingGalleryId);
+        if (!cancelled) setEditingItem(remote);
+      } catch {
+        Alert.alert('Błąd', 'Nie udało się załadować arcydzieła');
+        navigation.goBack();
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [editingGalleryId, navigation]);
 
   useEffect(() => {
     if (!editingItem) return;
 
     setTitle(editingItem.title);
-    setAuthor(editingItem.author);
-    setImage(editingItem.image);
-    setPrice(
-      editingItem.price !== undefined
-        ? String(editingItem.price)
-        : ''
-    );
+    setArtist(editingItem.artist);
+    setPrice(String(editingItem.price));
+    setImageUrl(editingItem.imageUrl);
   }, [editingItem]);
 
-  const showToast = (msg: string) => {
+  const toast = (msg: string) => {
     if (Platform.OS === 'android') {
       ToastAndroid.show(msg, ToastAndroid.SHORT);
     }
   };
 
   const pickImage = async () => {
-    const result = await launchImageLibrary({
-      mediaType: 'photo',
-    });
-
+    const result = await launchImageLibrary({ mediaType: 'photo' });
     if (result.assets?.[0]?.uri) {
-      setImage(result.assets[0].uri);
+      setImageUrl(result.assets[0].uri);
       setImageUrlInput('');
     }
   };
 
   const applyImageUrl = () => {
     if (imageUrlInput.trim()) {
-      setImage(imageUrlInput.trim());
+      setImageUrl(imageUrlInput.trim());
     }
   };
 
-  const saveGallery = () => {
-    if (!title || !author || !price || !image) {
-      Alert.alert(
-        'Uzupełnij dane',
-        'Tytuł, autor, cena i obraz są wymagane'
-      );
+  const saveGallery = async () => {
+    if (!title.trim() || !artist.trim() || !price.trim()) {
+      Alert.alert('Błąd', 'Uzupełnij tytuł, autora i cenę');
       return;
     }
 
-    if (isNaN(Number(price))) {
-      Alert.alert('Błąd', 'Cena musi być liczbą');
-      return;
-    }
+    try {
+      setIsSaving(true);
 
-    if (isSaving) return;
-    setIsSaving(true);
+      if (editingGalleryId) {
+        const payload: UpdateGalleryItemRequestDto = {
+          title: title.trim(),
+          artist: artist.trim(),
+          price: Number(price),
+          imageUrl,
+        };
 
-    const item: GalleryItem = {
-      id: editingId ?? Date.now().toString(),
-      title,
-      author,
-      image,
-      price: Number(price),
-    };
-
-    setTimeout(() => {
-      if (editingId) {
-        updateGallery(item);
+        await GalleryApi.update(editingGalleryId, payload);
         addActivity('EDIT_GALLERY');
-        showToast('Zapisano zmiany arcydzieła');
+        toast('Zaktualizowano arcydzieło');
       } else {
-        addGallery(item);
+        const payload: CreateGalleryItemRequestDto = {
+          title: title.trim(),
+          artist: artist.trim(),
+          price: Number(price),
+          imageUrl,
+        };
+
+        await GalleryApi.create(payload);
         addActivity('ADD_GALLERY');
-        showToast('Dodano nowe arcydzieło');
+        toast('Dodano arcydzieło');
       }
 
-      setIsSaving(false);
       navigation.goBack();
-    }, 300);
+    } catch {
+      Alert.alert('Błąd', 'Nie udało się zapisać arcydzieła');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>
-        {editingId
-          ? 'Edytuj arcydzieło'
-          : 'Dodaj arcydzieło'}
+        {editingGalleryId ? 'Edytuj arcydzieło' : 'Dodaj arcydzieło'}
       </Text>
+
+      {isLoading && (
+        <View style={styles.loading}>
+          <ActivityIndicator />
+        </View>
+      )}
 
       <TextInput
         style={styles.input}
@@ -132,8 +152,8 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
       <TextInput
         style={styles.input}
         placeholder="Autor"
-        value={author}
-        onChangeText={setAuthor}
+        value={artist}
+        onChangeText={setArtist}
       />
 
       <TextInput
@@ -144,46 +164,31 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
         onChangeText={setPrice}
       />
 
-      <Pressable
-        style={styles.imageButton}
-        onPress={pickImage}
-        disabled={isSaving}
-      >
-        <Text style={styles.imageText}>
-          Wybierz obraz z galerii
-        </Text>
+      <Pressable style={styles.imageButton} onPress={pickImage}>
+        <Text style={styles.imageText}>Wybierz obraz</Text>
       </Pressable>
 
       <TextInput
         style={styles.input}
-        placeholder="lub wklej URL obrazu"
+        placeholder="lub URL obrazu"
         value={imageUrlInput}
         onChangeText={setImageUrlInput}
         onBlur={applyImageUrl}
-        editable={!isSaving}
       />
 
-      {image && (
-        <Image
-          source={{ uri: image }}
-          style={styles.preview}
-        />
+      {imageUrl && (
+        <Image source={{ uri: imageUrl }} style={styles.preview} />
       )}
 
       <Pressable
-        style={[
-          styles.saveButton,
-          isSaving && styles.disabled,
-        ]}
+        style={[styles.saveButton, isSaving && styles.disabled]}
         onPress={saveGallery}
         disabled={isSaving}
       >
         {isSaving ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.saveText}>
-            Zapisz
-          </Text>
+          <Text style={styles.saveText}>Zapisz</Text>
         )}
       </Pressable>
     </View>
@@ -191,15 +196,13 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
+  container: { flex: 1, padding: 16 },
+  title: { fontSize: 22, fontWeight: '700', marginBottom: 16 },
+
+  loading: {
+    marginBottom: 12,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginBottom: 16,
-  },
+
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
@@ -207,32 +210,39 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginBottom: 8,
   },
+
   imageButton: {
     backgroundColor: '#455a64',
     padding: 10,
     borderRadius: 6,
     marginBottom: 8,
   },
+
   imageText: {
     color: '#fff',
     textAlign: 'center',
+    fontWeight: '600',
   },
+
   preview: {
     width: '100%',
     height: 180,
     borderRadius: 8,
     marginBottom: 12,
   },
+
   saveButton: {
     backgroundColor: '#2e7d32',
-    padding: 12,
-    borderRadius: 6,
+    padding: 14,
+    borderRadius: 8,
     alignItems: 'center',
   },
+
   saveText: {
     color: '#fff',
-    fontWeight: '600',
+    fontWeight: '700',
   },
+
   disabled: {
     opacity: 0.7,
   },

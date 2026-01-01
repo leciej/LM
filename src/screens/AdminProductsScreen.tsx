@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,21 +10,34 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
 import type { ProductDto } from '../api/products';
 import { useProducts } from '../features/products/useProducts';
 import { addActivity } from '../features/activity/store/activityStore';
 
 export function AdminProductsScreen({ navigation }: any) {
-  const { products, loading, error, remove } = useProducts();
+  const { products, loading, error, remove, reload } = useProducts();
 
-  const showToast = (message: string) => {
+  useFocusEffect(
+    useCallback(() => {
+      reload();
+    }, [reload])
+  );
+
+  const toast = (msg: string) => {
     if (Platform.OS === 'android') {
-      ToastAndroid.show(message, ToastAndroid.SHORT);
+      ToastAndroid.show(msg, ToastAndroid.SHORT);
     }
   };
 
-  const removeProduct = (product: ProductDto) => {
+  const handleEdit = (product: ProductDto) => {
+    navigation.navigate('AddProduct', {
+      productId: product.id,
+    });
+  };
+
+  const handleRemove = (product: ProductDto) => {
     Alert.alert(
       'Usuń produkt',
       `Czy na pewno chcesz usunąć "${product.name}"?`,
@@ -36,19 +49,33 @@ export function AdminProductsScreen({ navigation }: any) {
           onPress: async () => {
             await remove(product.id);
             addActivity('REMOVE_PRODUCT');
-            showToast('Produkt został usunięty');
+            toast('Produkt usunięty');
+            reload();
           },
         },
       ]
     );
   };
 
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <Text>Ładowanie…</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.center}>
+        <Text>{error}</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Produkty</Text>
-
-      {loading && <Text style={styles.subtitle}>Ładowanie...</Text>}
-      {!loading && error && <Text style={styles.subtitle}>{error}</Text>}
 
       <Pressable
         style={styles.addButton}
@@ -60,46 +87,54 @@ export function AdminProductsScreen({ navigation }: any) {
       <FlatList
         data={products}
         keyExtractor={item => item.id}
+        contentContainerStyle={{ paddingBottom: 24 }}
         ListEmptyComponent={
-          !loading && !error ? (
-            <Text style={styles.subtitle}>Brak produktów</Text>
-          ) : null
+          <Text style={styles.subtitle}>Brak produktów</Text>
         }
         renderItem={({ item }) => (
           <View style={styles.card}>
-            <View style={styles.topRow}>
-              {item.imageUrl && (
+            <View style={styles.row}>
+              {item.imageUrl ? (
                 <Image
                   source={{ uri: item.imageUrl }}
-                  style={styles.thumbnail}
+                  style={styles.image}
                 />
+              ) : (
+                <View style={styles.imagePlaceholder}>
+                  <Text style={styles.imagePlaceholderText}>
+                    Brak zdjęcia
+                  </Text>
+                </View>
               )}
 
               <View style={styles.info}>
                 <Text style={styles.name}>{item.name}</Text>
-                <Text style={styles.price}>{item.price} zł</Text>
+
+                {item.description ? (
+                  <Text style={styles.description}>
+                    {item.description}
+                  </Text>
+                ) : null}
+
+                <Text style={styles.price}>
+                  {item.price.toFixed(2)} zł
+                </Text>
               </View>
             </View>
 
-            <View style={styles.actions}>
-              <Pressable
-                style={styles.editButton}
-                onPress={() =>
-                  navigation.navigate('AddProduct', {
-                    productId: item.id,
-                  })
-                }
-              >
-                <Text style={styles.editText}>Edytuj</Text>
-              </Pressable>
+            <Pressable
+              style={styles.editButton}
+              onPress={() => handleEdit(item)}
+            >
+              <Text style={styles.editText}>Edytuj</Text>
+            </Pressable>
 
-              <Pressable
-                style={styles.deleteButton}
-                onPress={() => removeProduct(item)}
-              >
-                <Text style={styles.deleteText}>Usuń</Text>
-              </Pressable>
-            </View>
+            <Pressable
+              style={styles.deleteButton}
+              onPress={() => handleRemove(item)}
+            >
+              <Text style={styles.deleteText}>Usuń</Text>
+            </Pressable>
           </View>
         )}
       />
@@ -108,38 +143,123 @@ export function AdminProductsScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  title: { fontSize: 22, fontWeight: '700', marginBottom: 12 },
-  subtitle: { fontSize: 14, marginBottom: 10 },
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#f5f6f8',
+  },
+
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  title: {
+    fontSize: 22,
+    fontWeight: '800',
+    marginBottom: 12,
+  },
+
+  subtitle: {
+    textAlign: 'center',
+    marginTop: 20,
+    color: '#666',
+  },
+
   addButton: {
     backgroundColor: '#1976d2',
-    padding: 12,
-    borderRadius: 6,
-    marginBottom: 12,
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginBottom: 16,
   },
-  addText: { color: '#fff', textAlign: 'center', fontWeight: '600' },
+
+  addText: {
+    color: '#fff',
+    textAlign: 'center',
+    fontWeight: '700',
+  },
+
   card: {
-    backgroundColor: '#f2f2f2',
-    borderRadius: 8,
-    padding: 8,
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 14,
+    elevation: 3,
+  },
+
+  row: {
+    flexDirection: 'row',
     marginBottom: 12,
   },
-  topRow: { flexDirection: 'row', marginBottom: 8 },
-  thumbnail: { width: 80, height: 80, borderRadius: 6, marginRight: 12 },
-  info: { flex: 1, justifyContent: 'center' },
-  name: { fontSize: 16, fontWeight: '600' },
-  price: { fontSize: 14, marginTop: 4 },
-  actions: { gap: 6 },
+
+  image: {
+    width: 90,
+    height: 90,
+    borderRadius: 10,
+    marginRight: 12,
+    backgroundColor: '#eee',
+  },
+
+  imagePlaceholder: {
+    width: 90,
+    height: 90,
+    borderRadius: 10,
+    marginRight: 12,
+    backgroundColor: '#eee',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  imagePlaceholderText: {
+    fontSize: 12,
+    color: '#777',
+  },
+
+  info: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+
+  name: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+
+  description: {
+    fontSize: 13,
+    color: '#666',
+    marginBottom: 6,
+  },
+
+  price: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#2563EB',
+  },
+
   editButton: {
     backgroundColor: '#ffa000',
-    padding: 8,
-    borderRadius: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginBottom: 8,
   },
-  editText: { textAlign: 'center', fontWeight: '600' },
+
+  editText: {
+    textAlign: 'center',
+    fontWeight: '700',
+  },
+
   deleteButton: {
     backgroundColor: '#d32f2f',
-    padding: 8,
-    borderRadius: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
   },
-  deleteText: { color: '#fff', textAlign: 'center' },
+
+  deleteText: {
+    color: '#fff',
+    textAlign: 'center',
+    fontWeight: '700',
+  },
 });

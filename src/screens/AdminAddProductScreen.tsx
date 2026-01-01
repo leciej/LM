@@ -19,6 +19,7 @@ import type {
   ProductDto,
 } from '../api/products';
 import { useProducts } from '../features/products/useProducts';
+import { ProductsApi } from '../api/products';
 import { addActivity } from '../features/activity/store/activityStore';
 
 export function AdminAddProductScreen({ navigation, route }: any) {
@@ -27,19 +28,45 @@ export function AdminAddProductScreen({ navigation, route }: any) {
 
   const { products, add, update } = useProducts();
 
-  const editingProduct: ProductDto | undefined =
-    editingProductId
-      ? products.find(p => p.id === editingProductId)
-      : undefined;
+  const [editingProduct, setEditingProduct] =
+    useState<ProductDto | null>(null);
 
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
-  const [imageUrl, setImageUrl] = useState<string | undefined>(
-    undefined
-  );
+  const [imageUrl, setImageUrl] = useState<string | undefined>();
   const [imageUrlInput, setImageUrlInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!editingProductId) return;
+
+    const local = products.find(p => p.id === editingProductId);
+    if (local) {
+      setEditingProduct(local);
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        setIsLoading(true);
+        const remote = await ProductsApi.getById(editingProductId);
+        if (!cancelled) setEditingProduct(remote);
+      } catch {
+        Alert.alert('Błąd', 'Nie udało się załadować produktu');
+        navigation.goBack();
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [editingProductId, products, navigation]);
 
   useEffect(() => {
     if (!editingProduct) return;
@@ -50,11 +77,14 @@ export function AdminAddProductScreen({ navigation, route }: any) {
     setImageUrl(editingProduct.imageUrl);
   }, [editingProduct]);
 
-  const pickImage = async () => {
-    const result = await launchImageLibrary({
-      mediaType: 'photo',
-    });
+  const toast = (msg: string) => {
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(msg, ToastAndroid.SHORT);
+    }
+  };
 
+  const pickImage = async () => {
+    const result = await launchImageLibrary({ mediaType: 'photo' });
     if (result.assets?.[0]?.uri) {
       setImageUrl(result.assets[0].uri);
       setImageUrlInput('');
@@ -67,18 +97,9 @@ export function AdminAddProductScreen({ navigation, route }: any) {
     }
   };
 
-  const showToast = (message: string) => {
-    if (Platform.OS === 'android') {
-      ToastAndroid.show(message, ToastAndroid.SHORT);
-    }
-  };
-
   const saveProduct = async () => {
     if (!name.trim() || !price.trim()) {
-      Alert.alert(
-        'Błąd',
-        'Uzupełnij nazwę i cenę.'
-      );
+      Alert.alert('Błąd', 'Uzupełnij nazwę i cenę');
       return;
     }
 
@@ -95,7 +116,7 @@ export function AdminAddProductScreen({ navigation, route }: any) {
 
         await update(editingProductId, payload);
         addActivity('EDIT_PRODUCT');
-        showToast('Zaktualizowano produkt');
+        toast('Zaktualizowano produkt');
       } else {
         const payload: CreateProductRequestDto = {
           name: name.trim(),
@@ -106,15 +127,12 @@ export function AdminAddProductScreen({ navigation, route }: any) {
 
         await add(payload);
         addActivity('ADD_PRODUCT');
-        showToast('Dodano produkt');
+        toast('Dodano produkt');
       }
 
       navigation.goBack();
-    } catch (e: any) {
-      Alert.alert(
-        'Błąd',
-        e?.message ?? 'Nie udało się zapisać produktu'
-      );
+    } catch {
+      Alert.alert('Błąd', 'Nie udało się zapisać produktu');
     } finally {
       setIsSaving(false);
     }
@@ -123,10 +141,14 @@ export function AdminAddProductScreen({ navigation, route }: any) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>
-        {editingProduct
-          ? 'Edytuj produkt'
-          : 'Dodaj produkt'}
+        {editingProductId ? 'Edytuj produkt' : 'Dodaj produkt'}
       </Text>
+
+      {isLoading && (
+        <View style={styles.loading}>
+          <ActivityIndicator />
+        </View>
+      )}
 
       <TextInput
         style={styles.input}
@@ -144,44 +166,31 @@ export function AdminAddProductScreen({ navigation, route }: any) {
       />
 
       <TextInput
-        style={styles.input}
-        placeholder="Opis produktu"
+        style={[styles.input, styles.multiline]}
+        placeholder="Opis"
         value={description}
         onChangeText={setDescription}
         multiline
       />
 
-      <Pressable
-        style={styles.imageButton}
-        onPress={pickImage}
-        disabled={isSaving}
-      >
-        <Text style={styles.imageText}>
-          Wybierz obraz z galerii
-        </Text>
+      <Pressable style={styles.imageButton} onPress={pickImage}>
+        <Text style={styles.imageText}>Wybierz obraz</Text>
       </Pressable>
 
       <TextInput
         style={styles.input}
-        placeholder="lub wklej URL obrazu"
+        placeholder="lub URL obrazu"
         value={imageUrlInput}
         onChangeText={setImageUrlInput}
         onBlur={applyImageUrl}
-        editable={!isSaving}
       />
 
       {imageUrl && (
-        <Image
-          source={{ uri: imageUrl }}
-          style={styles.preview}
-        />
+        <Image source={{ uri: imageUrl }} style={styles.preview} />
       )}
 
       <Pressable
-        style={[
-          styles.saveButton,
-          isSaving && styles.disabled,
-        ]}
+        style={[styles.saveButton, isSaving && styles.disabled]}
         onPress={saveProduct}
         disabled={isSaving}
       >
@@ -195,20 +204,14 @@ export function AdminAddProductScreen({ navigation, route }: any) {
   );
 }
 
-/* =========================
-   STYLES
-   ========================= */
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
+  container: { flex: 1, padding: 16 },
+  title: { fontSize: 22, fontWeight: '700', marginBottom: 16 },
+
+  loading: {
+    marginBottom: 12,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginBottom: 16,
-  },
+
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
@@ -216,32 +219,44 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginBottom: 8,
   },
+
+  multiline: {
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+
   imageButton: {
     backgroundColor: '#455a64',
     padding: 10,
     borderRadius: 6,
     marginBottom: 8,
   },
+
   imageText: {
     color: '#fff',
     textAlign: 'center',
+    fontWeight: '600',
   },
+
   preview: {
     width: '100%',
     height: 180,
-    borderRadius: 6,
+    borderRadius: 8,
     marginBottom: 12,
   },
+
   saveButton: {
     backgroundColor: '#2e7d32',
-    padding: 12,
-    borderRadius: 6,
+    padding: 14,
+    borderRadius: 8,
     alignItems: 'center',
   },
+
   saveText: {
     color: '#fff',
-    fontWeight: '600',
+    fontWeight: '700',
   },
+
   disabled: {
     opacity: 0.7,
   },

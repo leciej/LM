@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -28,7 +28,7 @@ type Props = NativeStackScreenProps<
 const mapDtoToProduct = (dto: ProductDto): Product => ({
   id: dto.id,
   name: dto.name,
-  artist: '—',
+  artist: '',
   price: dto.price,
   description: dto.description ?? '',
   image: dto.imageUrl,
@@ -36,6 +36,9 @@ const mapDtoToProduct = (dto: ProductDto): Product => ({
 
 export function ProductsScreen({ navigation }: Props) {
   const { products, loading, error } = useProducts();
+
+  const listRef = useRef<FlatList>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const handleAddToCart = (dto: ProductDto) => {
     const product = mapDtoToProduct(dto);
@@ -69,9 +72,15 @@ export function ProductsScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <FlatList
+        ref={listRef}
         data={products}
         keyExtractor={item => item.id}
-        contentContainerStyle={{ paddingBottom: 16 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        scrollEventThrottle={16}
+        onScroll={event => {
+          const y = event.nativeEvent.contentOffset.y;
+          setShowScrollTop(y > 300);
+        }}
         renderItem={({ item }) => {
           const product = mapDtoToProduct(item);
 
@@ -98,9 +107,14 @@ export function ProductsScreen({ navigation }: Props) {
                       {product.name}
                     </Text>
 
-                    <Text style={styles.artist}>
-                      {product.artist}
-                    </Text>
+                    {!!product.description && (
+                      <Text
+                        style={styles.description}
+                        numberOfLines={2}
+                      >
+                        {product.description}
+                      </Text>
+                    )}
 
                     <Text style={styles.price}>
                       {product.price} zł
@@ -121,6 +135,20 @@ export function ProductsScreen({ navigation }: Props) {
           );
         }}
       />
+
+      {showScrollTop && (
+        <Pressable
+          style={styles.scrollTopButton}
+          onPress={() =>
+            listRef.current?.scrollToOffset({
+              offset: 0,
+              animated: true,
+            })
+          }
+        >
+          <Text style={styles.scrollTopText}>⬆</Text>
+        </Pressable>
+      )}
 
       {error && products.length > 0 && (
         <Text style={styles.softError}>
@@ -179,7 +207,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
 
-  artist: {
+  description: {
     fontSize: 13,
     color: '#666',
     marginBottom: 6,
@@ -209,5 +237,24 @@ const styles = StyleSheet.create({
     marginTop: 8,
     color: '#888',
     fontSize: 12,
+  },
+
+  scrollTopButton: {
+    position: 'absolute',
+    right: 16,
+    bottom: 24,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#2563EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 6,
+  },
+
+  scrollTopText: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: '800',
   },
 });
