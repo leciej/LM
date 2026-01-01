@@ -11,31 +11,36 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import type { ProductDto } from '../api/products';
 import { useProducts } from '../features/products/useProducts';
 import { addItemToCart } from '../features/cart/store/cartStore';
-import type { ProductsStackParamList } from '../navigation/tabs/ProductsStackNavigator';
+import type { ProductDto } from '../api/products';
+import type { Product } from '../features/products/mockProducts';
+import type { ProductsStackParamList } from '../navigation/TabsNavigator/ProductsStackNavigator';
 
 type Props = NativeStackScreenProps<
   ProductsStackParamList,
   'Products'
 >;
 
+/* =========================
+   DTO → DOMAIN MAP
+   ========================= */
+const mapDtoToProduct = (dto: ProductDto): Product => ({
+  id: dto.id,
+  name: dto.name,
+  artist: '—',
+  price: dto.price,
+  description: dto.description ?? '',
+  image: dto.imageUrl,
+});
+
 export function ProductsScreen({ navigation }: Props) {
   const { products, loading, error } = useProducts();
 
-  const handleAddToCart = (product: ProductDto) => {
-    addItemToCart(
-      {
-        id: product.id,
-        name: product.name,
-        artist: '—',
-        price: product.price,
-        description: product.description ?? '',
-        image: product.imageUrl,
-      },
-      'PRODUCTS'
-    );
+  const handleAddToCart = (dto: ProductDto) => {
+    const product = mapDtoToProduct(dto);
+
+    addItemToCart(product, 'PRODUCTS');
 
     if (Platform.OS === 'android') {
       ToastAndroid.show(
@@ -45,77 +50,149 @@ export function ProductsScreen({ navigation }: Props) {
     }
   };
 
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <Text>Ładowanie produktów…</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.center}>
+        <Text>{error}</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      {loading && <Text>Ładowanie…</Text>}
-      {error && <Text>{error}</Text>}
-
       <FlatList
         data={products}
         keyExtractor={item => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Pressable
-              onPress={() =>
-                navigation.navigate('ProductDetails', {
-                  product: item,
-                  source: 'PRODUCTS',
-                })
-              }
-            >
-              <View style={styles.row}>
-                {item.imageUrl && (
-                  <Image
-                    source={{ uri: item.imageUrl }}
-                    style={styles.thumb}
-                  />
-                )}
+        contentContainerStyle={{ paddingBottom: 16 }}
+        renderItem={({ item }) => {
+          const product = mapDtoToProduct(item);
 
-                <View>
-                  <Text style={styles.name}>{item.name}</Text>
-                  <Text>{item.price} zł</Text>
+          return (
+            <View style={styles.card}>
+              <Pressable
+                onPress={() =>
+                  navigation.navigate('ProductDetails', {
+                    product: item,
+                    source: 'PRODUCTS',
+                  })
+                }
+              >
+                <View style={styles.row}>
+                  {product.image && (
+                    <Image
+                      source={{ uri: product.image }}
+                      style={styles.image}
+                    />
+                  )}
+
+                  <View style={styles.info}>
+                    <Text style={styles.name}>
+                      {product.name}
+                    </Text>
+
+                    <Text style={styles.artist}>
+                      {product.artist}
+                    </Text>
+
+                    <Text style={styles.price}>
+                      {product.price} zł
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            </Pressable>
+              </Pressable>
 
-            <Pressable
-              style={styles.btn}
-              onPress={() => handleAddToCart(item)}
-            >
-              <Text style={styles.btnText}>
-                Dodaj do koszyka
-              </Text>
-            </Pressable>
-          </View>
-        )}
+              <Pressable
+                style={styles.button}
+                onPress={() => handleAddToCart(item)}
+              >
+                <Text style={styles.buttonText}>
+                  Dodaj do koszyka
+                </Text>
+              </Pressable>
+            </View>
+          );
+        }}
       />
     </View>
   );
 }
 
+/* =========================
+   STYLES
+   ========================= */
+
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#f5f6f8',
+  },
+
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
   card: {
-    backgroundColor: '#f2f2f2',
-    borderRadius: 8,
-    padding: 8,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 12,
     marginBottom: 12,
+    elevation: 2,
   },
-  row: { flexDirection: 'row' },
-  thumb: {
-    width: 80,
-    height: 80,
-    borderRadius: 6,
+
+  row: {
+    flexDirection: 'row',
+  },
+
+  image: {
+    width: 90,
+    height: 90,
+    borderRadius: 8,
     marginRight: 12,
+    backgroundColor: '#eee',
   },
-  name: { fontWeight: '700' },
-  btn: {
-    marginTop: 8,
+
+  info: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+
+  name: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+
+  artist: {
+    fontSize: 13,
+    color: '#666',
+    marginBottom: 6,
+  },
+
+  price: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#2563EB',
+  },
+
+  button: {
+    marginTop: 10,
     backgroundColor: '#2e7d32',
-    padding: 10,
-    borderRadius: 6,
+    paddingVertical: 10,
+    borderRadius: 8,
   },
-  btnText: {
+
+  buttonText: {
     color: '#fff',
     textAlign: 'center',
     fontWeight: '700',

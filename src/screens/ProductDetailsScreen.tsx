@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import type { ProductsStackParamList } from '../navigation/tabs/ProductsStackNavigator';
+import type { ProductsStackParamList } from '../navigation/TabsNavigator/ProductsStackNavigator';
 import type { Product } from '../features/products/mockProducts';
 import { addItemToCart } from '../features/cart/store/cartStore';
 import {
