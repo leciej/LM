@@ -1,4 +1,9 @@
-import React, { useRef, useState } from 'react';
+import React, {
+  useRef,
+  useState,
+  useMemo,
+  useEffect,
+} from 'react';
 import {
   View,
   Text,
@@ -9,6 +14,7 @@ import {
   ToastAndroid,
   Platform,
 } from 'react-native';
+import { useRoute } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { useProducts } from '../features/products/useProducts';
@@ -16,16 +22,71 @@ import { addItemToCart } from '../features/cart/store/cartStore';
 import type { ProductDto } from '../api/products';
 import type { ProductsStackParamList } from '../navigation/TabsNavigator/ProductsStackNavigator';
 
+/* =========================
+   TYPES
+   ========================= */
+
 type Props = NativeStackScreenProps<
   ProductsStackParamList,
   'Products'
 >;
 
+type SortOption =
+  | 'NAME_ASC'
+  | 'NAME_DESC'
+  | 'PRICE_ASC'
+  | 'PRICE_DESC';
+
+/* =========================
+   COMPONENT
+   ========================= */
+
 export function ProductsScreen({ navigation }: Props) {
   const { products, loading, error } = useProducts();
+  const route = useRoute<any>();
 
   const listRef = useRef<FlatList>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [sort, setSort] = useState<SortOption>('NAME_ASC');
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  /* =========================
+     REACT TO HEADER HAMBURGER
+     ========================= */
+
+  useEffect(() => {
+    if (route.params?.openSortMenu) {
+      setMenuOpen(true);
+    }
+  }, [route.params?.openSortMenu]);
+
+  /* =========================
+     SORTED PRODUCTS
+     ========================= */
+
+  const sortedProducts = useMemo(() => {
+    const copy = [...products];
+
+    switch (sort) {
+      case 'PRICE_ASC':
+        return copy.sort((a, b) => a.price - b.price);
+      case 'PRICE_DESC':
+        return copy.sort((a, b) => b.price - a.price);
+      case 'NAME_DESC':
+        return copy.sort((a, b) =>
+          b.name.localeCompare(a.name)
+        );
+      case 'NAME_ASC':
+      default:
+        return copy.sort((a, b) =>
+          a.name.localeCompare(b.name)
+        );
+    }
+  }, [products, sort]);
+
+  /* =========================
+     HANDLERS
+     ========================= */
 
   const handleAddToCart = (product: ProductDto) => {
     addItemToCart(
@@ -33,7 +94,7 @@ export function ProductsScreen({ navigation }: Props) {
         id: product.id,
         name: product.name,
         price: product.price,
-        imageUrl: product.imageUrl, // ⬅️ KLUCZOWA ZMIANA
+        imageUrl: product.imageUrl,
       },
       'PRODUCTS'
     );
@@ -45,6 +106,15 @@ export function ProductsScreen({ navigation }: Props) {
       );
     }
   };
+
+  const selectSort = (value: SortOption) => {
+    setSort(value);
+    setMenuOpen(false);
+  };
+
+  /* =========================
+     STATES
+     ========================= */
 
   if (loading && products.length === 0) {
     return (
@@ -62,11 +132,51 @@ export function ProductsScreen({ navigation }: Props) {
     );
   }
 
+  /* =========================
+     RENDER
+     ========================= */
+
   return (
     <View style={styles.container}>
+      {/* SORT MENU OVERLAY */}
+      {menuOpen && (
+        <Pressable
+          style={styles.overlay}
+          onPress={() => setMenuOpen(false)}
+        >
+          <View style={styles.menu}>
+            <Text style={styles.menuTitle}>
+              Sortuj według
+            </Text>
+
+            <MenuItem
+              label="Nazwa A–Z"
+              active={sort === 'NAME_ASC'}
+              onPress={() => selectSort('NAME_ASC')}
+            />
+            <MenuItem
+              label="Nazwa Z–A"
+              active={sort === 'NAME_DESC'}
+              onPress={() => selectSort('NAME_DESC')}
+            />
+            <MenuItem
+              label="Cena rosnąco"
+              active={sort === 'PRICE_ASC'}
+              onPress={() => selectSort('PRICE_ASC')}
+            />
+            <MenuItem
+              label="Cena malejąco"
+              active={sort === 'PRICE_DESC'}
+              onPress={() => selectSort('PRICE_DESC')}
+            />
+          </View>
+        </Pressable>
+      )}
+
+      {/* LIST */}
       <FlatList
         ref={listRef}
-        data={products}
+        data={sortedProducts}
         keyExtractor={item => item.id}
         contentContainerStyle={{ paddingBottom: 100 }}
         scrollEventThrottle={16}
@@ -125,6 +235,7 @@ export function ProductsScreen({ navigation }: Props) {
         )}
       />
 
+      {/* SCROLL TO TOP */}
       {showScrollTop && (
         <Pressable
           style={styles.scrollTopButton}
@@ -139,12 +250,46 @@ export function ProductsScreen({ navigation }: Props) {
         </Pressable>
       )}
 
+      {/* SOFT ERROR */}
       {error && products.length > 0 && (
         <Text style={styles.softError}>
           {error}
         </Text>
       )}
     </View>
+  );
+}
+
+/* =========================
+   MENU ITEM
+   ========================= */
+
+function MenuItem({
+  label,
+  active,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      style={[
+        styles.menuItem,
+        active && styles.menuItemActive,
+      ]}
+      onPress={onPress}
+    >
+      <Text
+        style={[
+          styles.menuItemText,
+          active && styles.menuItemTextActive,
+        ]}
+      >
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 
@@ -163,6 +308,50 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 10,
+  },
+
+  menu: {
+    position: 'absolute',
+    top: 8,
+    right: 16,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 12,
+    width: 200,
+    elevation: 8,
+  },
+
+  menuTitle: {
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+
+  menuItem: {
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+  },
+
+  menuItemActive: {
+    backgroundColor: '#2563EB',
+  },
+
+  menuItemText: {
+    fontSize: 14,
+  },
+
+  menuItemTextActive: {
+    color: '#fff',
+    fontWeight: '700',
   },
 
   card: {

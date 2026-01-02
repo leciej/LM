@@ -1,17 +1,36 @@
 import React from 'react';
+import { Text, Pressable } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import  GalleryScreen  from '../screens/GalleryScreen';
+import GalleryScreen from '../screens/GalleryScreen';
 import { GalleryDetailsScreen } from '../screens/GalleryDetailsScreen';
 
+/* =========================
+   TYPES
+   ========================= */
+
 export type GalleryStackParamList = {
-  Gallery: undefined;
+  Gallery:
+    | {
+        openSortMenu?: number;
+      }
+    | undefined;
+
   GalleryDetails: {
     galleryId: string;
   };
 };
 
-const Stack = createNativeStackNavigator<GalleryStackParamList>();
+/* =========================
+   STACK
+   ========================= */
+
+const Stack =
+  createNativeStackNavigator<GalleryStackParamList>();
+
+/* =========================
+   NAVIGATOR
+   ========================= */
 
 export function GalleryStackNavigator() {
   return (
@@ -19,7 +38,25 @@ export function GalleryStackNavigator() {
       <Stack.Screen
         name="Gallery"
         component={GalleryScreen}
-        options={{ title: 'Arcydzieła' }}
+        options={({ navigation }) => ({
+          title: 'Arcydzieła', // ✅ tytuł zostaje
+          headerRight: () => (
+            <Pressable
+              onPress={() =>
+                navigation.navigate({
+                  name: 'Gallery',
+                  params: { openSortMenu: Date.now() },
+                  merge: true,
+                })
+              }
+              style={{ paddingHorizontal: 16 }}
+            >
+              <Text style={{ fontSize: 22, fontWeight: '800' }}>
+                ☰
+              </Text>
+            </Pressable>
+          ),
+        })}
       />
 
       <Stack.Screen
