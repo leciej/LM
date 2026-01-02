@@ -11,8 +11,8 @@ class GalleryStore {
     makeAutoObservable(this);
   }
 
-  async load() {
-    if (this.loaded || this.isLoading) return;
+  async load(force = false) {
+    if ((this.loaded && !force) || this.isLoading) return;
 
     this.isLoading = true;
 
@@ -27,6 +27,10 @@ class GalleryStore {
         this.isLoading = false;
       });
     }
+  }
+
+  invalidate() {
+    this.loaded = false;
   }
 
   remove(id: string) {

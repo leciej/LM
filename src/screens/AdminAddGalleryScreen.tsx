@@ -20,6 +20,7 @@ import {
 } from '../api/gallery/gallery.types';
 import { GalleryApi } from '../api/gallery/GalleryApi';
 import { addActivity } from '../features/activity/store/activityStore';
+import { galleryStore } from '../features/gallery/store/galleryStore';
 
 export function AdminAddGalleryScreen({ navigation, route }: any) {
   const editingGalleryId: string | undefined =
@@ -103,10 +104,7 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
      ========================= */
   const saveGallery = async () => {
     if (!title.trim() || !artist.trim() || !price.trim()) {
-      Alert.alert(
-        'Błąd',
-        'Uzupełnij tytuł, autora i cenę'
-      );
+      Alert.alert('Błąd', 'Uzupełnij tytuł, autora i cenę');
       return;
     }
 
@@ -137,12 +135,12 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
         toast('Dodano arcydzieło');
       }
 
+      // 🔴 KLUCZOWA LINIA
+      galleryStore.invalidate();
+
       navigation.goBack();
     } catch {
-      Alert.alert(
-        'Błąd',
-        'Nie udało się zapisać arcydzieła'
-      );
+      Alert.alert('Błąd', 'Nie udało się zapisać arcydzieła');
     } finally {
       setIsSaving(false);
     }
