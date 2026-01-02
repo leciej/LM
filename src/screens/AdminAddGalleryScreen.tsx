@@ -13,13 +13,12 @@ import {
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 
-import type {
+import {
   GalleryItemDto,
   CreateGalleryItemRequestDto,
   UpdateGalleryItemRequestDto,
-} from '../api/gallery';
-
-import { GalleryApi } from '../api/gallery';
+} from '../api/gallery/gallery.types';
+import { GalleryApi } from '../api/gallery/GalleryApi';
 import { addActivity } from '../features/activity/store/activityStore';
 
 export function AdminAddGalleryScreen({ navigation, route }: any) {
@@ -34,9 +33,13 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
   const [price, setPrice] = useState('');
   const [imageUrl, setImageUrl] = useState<string | undefined>();
   const [imageUrlInput, setImageUrlInput] = useState('');
+
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  /* =========================
+     LOAD FOR EDIT
+     ========================= */
   useEffect(() => {
     if (!editingGalleryId) return;
 
@@ -60,6 +63,9 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
     };
   }, [editingGalleryId, navigation]);
 
+  /* =========================
+     FILL FORM
+     ========================= */
   useEffect(() => {
     if (!editingItem) return;
 
@@ -75,6 +81,9 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
     }
   };
 
+  /* =========================
+     IMAGE
+     ========================= */
   const pickImage = async () => {
     const result = await launchImageLibrary({ mediaType: 'photo' });
     if (result.assets?.[0]?.uri) {
@@ -89,9 +98,15 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
     }
   };
 
+  /* =========================
+     SAVE
+     ========================= */
   const saveGallery = async () => {
     if (!title.trim() || !artist.trim() || !price.trim()) {
-      Alert.alert('Błąd', 'Uzupełnij tytuł, autora i cenę');
+      Alert.alert(
+        'Błąd',
+        'Uzupełnij tytuł, autora i cenę'
+      );
       return;
     }
 
@@ -114,7 +129,7 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
           title: title.trim(),
           artist: artist.trim(),
           price: Number(price),
-          imageUrl,
+          imageUrl: imageUrl!,
         };
 
         await GalleryApi.create(payload);
@@ -124,16 +139,24 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
 
       navigation.goBack();
     } catch {
-      Alert.alert('Błąd', 'Nie udało się zapisać arcydzieła');
+      Alert.alert(
+        'Błąd',
+        'Nie udało się zapisać arcydzieła'
+      );
     } finally {
       setIsSaving(false);
     }
   };
 
+  /* =========================
+     UI
+     ========================= */
   return (
     <View style={styles.container}>
       <Text style={styles.title}>
-        {editingGalleryId ? 'Edytuj arcydzieło' : 'Dodaj arcydzieło'}
+        {editingGalleryId
+          ? 'Edytuj arcydzieło'
+          : 'Dodaj arcydzieło'}
       </Text>
 
       {isLoading && (
@@ -164,8 +187,13 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
         onChangeText={setPrice}
       />
 
-      <Pressable style={styles.imageButton} onPress={pickImage}>
-        <Text style={styles.imageText}>Wybierz obraz</Text>
+      <Pressable
+        style={styles.imageButton}
+        onPress={pickImage}
+      >
+        <Text style={styles.imageText}>
+          Wybierz obraz
+        </Text>
       </Pressable>
 
       <TextInput
@@ -177,32 +205,49 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
       />
 
       {imageUrl && (
-        <Image source={{ uri: imageUrl }} style={styles.preview} />
+        <Image
+          source={{ uri: imageUrl }}
+          style={styles.preview}
+        />
       )}
 
       <Pressable
-        style={[styles.saveButton, isSaving && styles.disabled]}
+        style={[
+          styles.saveButton,
+          isSaving && styles.disabled,
+        ]}
         onPress={saveGallery}
         disabled={isSaving}
       >
         {isSaving ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.saveText}>Zapisz</Text>
+          <Text style={styles.saveText}>
+            Zapisz
+          </Text>
         )}
       </Pressable>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  title: { fontSize: 22, fontWeight: '700', marginBottom: 16 },
+/* =========================
+   STYLES
+   ========================= */
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 16,
+  },
   loading: {
     marginBottom: 12,
   },
-
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
@@ -210,39 +255,33 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginBottom: 8,
   },
-
   imageButton: {
     backgroundColor: '#455a64',
     padding: 10,
     borderRadius: 6,
     marginBottom: 8,
   },
-
   imageText: {
     color: '#fff',
     textAlign: 'center',
     fontWeight: '600',
   },
-
   preview: {
     width: '100%',
     height: 180,
     borderRadius: 8,
     marginBottom: 12,
   },
-
   saveButton: {
     backgroundColor: '#2e7d32',
     padding: 14,
     borderRadius: 8,
     alignItems: 'center',
   },
-
   saveText: {
     color: '#fff',
     fontWeight: '700',
   },
-
   disabled: {
     opacity: 0.7,
   },

@@ -25,7 +25,7 @@ export function GalleryStackNavigator() {
       <Stack.Screen
         name="GalleryDetails"
         component={GalleryDetailsScreen}
-        options={{ title: 'Arcydzieło' }}
+        options={{ title: 'Szczegóły arcydzieła' }}
       />
     </Stack.Navigator>
   );

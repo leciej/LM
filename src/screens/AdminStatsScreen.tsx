@@ -1,15 +1,14 @@
-import React, { useMemo, useSyncExternalStore } from 'react';
+// screens/AdminStatsScreen.tsx
+import React, { useMemo, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
 } from 'react-native';
+import { observer } from 'mobx-react-lite';
 
-import {
-  getGallery,
-  subscribe as gallerySubscribe,
-} from '../features/gallery/store/galleryStore';
+import { galleryStore } from '../features/gallery/store/galleryStore';
 
 import { useProducts } from '../features/products/useProducts';
 
@@ -35,15 +34,19 @@ import {
   getActivities,
 } from '../features/activity/store/activityStore';
 
+import { useSyncExternalStore } from 'react';
 import { LineChart } from '../components/LineChart';
 
 /* =========================
    SCREEN
    ========================= */
 
-export function AdminStatsScreen() {
-  const gallery =
-    useSyncExternalStore(gallerySubscribe, getGallery) ?? [];
+export const AdminStatsScreen = observer(() => {
+  useEffect(() => {
+    galleryStore.load();
+  }, []);
+
+  const gallery = galleryStore.items;
 
   const activities =
     useSyncExternalStore(
@@ -93,7 +96,6 @@ export function AdminStatsScreen() {
       style={styles.container}
       contentContainerStyle={styles.content}
     >
-      {/* KAFELKI */}
       <View style={styles.grid}>
         <StatCard
           label="Produkty"
@@ -109,7 +111,6 @@ export function AdminStatsScreen() {
         />
       </View>
 
-      {/* STATYSTYKI */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>
           Statystyki platformy
@@ -137,7 +138,6 @@ export function AdminStatsScreen() {
         />
       </View>
 
-      {/* WYKRES */}
       {series.length > 1 && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
@@ -149,7 +149,7 @@ export function AdminStatsScreen() {
       )}
     </ScrollView>
   );
-}
+});
 
 /* =========================
    COMPONENTS
@@ -164,12 +164,8 @@ function StatCard({
 }) {
   return (
     <View style={styles.card}>
-      <Text style={styles.cardValue}>
-        {value}
-      </Text>
-      <Text style={styles.cardLabel}>
-        {label}
-      </Text>
+      <Text style={styles.cardValue}>{value}</Text>
+      <Text style={styles.cardLabel}>{label}</Text>
     </View>
   );
 }
@@ -183,12 +179,8 @@ function StatRow({
 }) {
   return (
     <View style={styles.statRow}>
-      <Text style={styles.statLabel}>
-        {label}
-      </Text>
-      <Text style={styles.statValue}>
-        {value}
-      </Text>
+      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={styles.statValue}>{value}</Text>
     </View>
   );
 }
@@ -202,17 +194,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f6f8',
   },
-
   content: {
     padding: 16,
     paddingBottom: 32,
   },
-
   grid: {
     flexDirection: 'row',
     gap: 12,
   },
-
   card: {
     flex: 1,
     backgroundColor: '#fff',
@@ -221,18 +210,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 3,
   },
-
   cardValue: {
     fontSize: 26,
     fontWeight: '800',
   },
-
   cardLabel: {
     marginTop: 4,
     fontSize: 13,
     color: '#555',
   },
-
   section: {
     marginTop: 24,
     backgroundColor: '#fff',
@@ -240,23 +226,19 @@ const styles = StyleSheet.create({
     padding: 16,
     elevation: 2,
   },
-
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
     marginBottom: 12,
   },
-
   statRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 8,
   },
-
   statLabel: {
     color: '#444',
   },
-
   statValue: {
     fontWeight: '700',
   },

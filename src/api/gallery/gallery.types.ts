@@ -1,12 +1,22 @@
-export type GalleryItemDto = {
+export interface GalleryItemDto {
   id: string;
   title: string;
   artist: string;
-  description?: string;
-  year?: number;
-  price?: number;
-  imageUrl?: string;
-};
+  price: number;
+  imageUrl: string;
+  createdAt?: string;
+}
 
-export type CreateGalleryItemRequestDto = Omit<GalleryItemDto, 'id'>;
-export type UpdateGalleryItemRequestDto = Partial<CreateGalleryItemRequestDto>;
+export interface CreateGalleryItemRequestDto {
+  title: string;
+  artist: string;
+  price: number;
+  imageUrl: string;
+}
+
+export interface UpdateGalleryItemRequestDto {
+  title: string;
+  artist: string;
+  price: number;
+  imageUrl?: string;
+}

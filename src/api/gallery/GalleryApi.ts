@@ -1,3 +1,4 @@
+// api/gallery/GalleryApi.ts
 import { httpRequest } from '../client';
 import {
   GalleryItemDto,
@@ -6,21 +7,24 @@ import {
 } from './gallery.types';
 
 export class GalleryApi {
-  static getAll() {
-    return httpRequest<GalleryItemDto[]>({
+  static async getAll(): Promise<GalleryItemDto[]> {
+    const res = await httpRequest<GalleryItemDto[]>({
       method: 'GET',
-      url: '/gallery', // jeśli backend ma /artworks → tu zostaje /artworks
+      url: '/gallery',
     });
+    return res ?? [];
   }
 
-  static getById(id: string) {
+  static async getById(id: string): Promise<GalleryItemDto> {
     return httpRequest<GalleryItemDto>({
       method: 'GET',
       url: `/gallery/${id}`,
     });
   }
 
-  static create(payload: CreateGalleryItemRequestDto) {
+  static async create(
+    payload: CreateGalleryItemRequestDto
+  ): Promise<GalleryItemDto> {
     return httpRequest<GalleryItemDto, CreateGalleryItemRequestDto>({
       method: 'POST',
       url: '/gallery',
@@ -28,7 +32,10 @@ export class GalleryApi {
     });
   }
 
-  static update(id: string, payload: UpdateGalleryItemRequestDto) {
+  static async update(
+    id: string,
+    payload: UpdateGalleryItemRequestDto
+  ): Promise<GalleryItemDto> {
     return httpRequest<GalleryItemDto, UpdateGalleryItemRequestDto>({
       method: 'PUT',
       url: `/gallery/${id}`,
@@ -36,7 +43,7 @@ export class GalleryApi {
     });
   }
 
-  static delete(id: string) {
+  static async delete(id: string): Promise<void> {
     return httpRequest<void>({
       method: 'DELETE',
       url: `/gallery/${id}`,

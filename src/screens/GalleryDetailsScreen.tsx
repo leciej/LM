@@ -9,13 +9,14 @@ import {
   Button,
   ToastAndroid,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { getGallery } from '../features/gallery/store/galleryStore';
-import { addItemToCart } from '../features/cart/store/cartStore';
-import { useAuth } from '../auth/AuthContext';
-import { addRating } from '../features/ratings/store/ratingsStore';
+import { galleryStore } from '@/features/gallery/store/galleryStore';
+import { addItemToCart } from '@/features/cart/store/cartStore';
+import { useAuth } from '@/auth/AuthContext';
+import { addRating } from '@/features/ratings/store/ratingsStore';
 
 type GalleryStackParamList = {
   Gallery: undefined;
@@ -48,7 +49,7 @@ export function GalleryDetailsScreen({ route }: Props) {
   ).current;
 
   const { galleryId } = route.params;
-  const item = getGallery().find(g => g.id === galleryId);
+  const item = galleryStore.items.find(g => g.id === galleryId);
 
   if (!item) {
     return (
@@ -93,16 +94,16 @@ export function GalleryDetailsScreen({ route }: Props) {
     if (!isLoggedIn) return;
 
     addItemToCart(
-      {
-        id: item.id,
-        name: item.title,
-        image: item.image,
-        artist: item.author,
-        price: item.price,
-        description: `Arcydzieło: ${item.title}`,
-      },
-      'GALLERY'
-    );
+  {
+    id: item.id,
+    name: item.title,
+    imageUrl: item.imageUrl,
+    price: item.price,
+    description: `Arcydzieło: ${item.title}`,
+  },
+  'GALLERY'
+);
+
 
     if (Platform.OS === 'android') {
       ToastAndroid.show(
@@ -150,16 +151,14 @@ export function GalleryDetailsScreen({ route }: Props) {
   };
 
   return (
-    <View style={styles.container}>
-      {item.image && (
-        <Image
-          source={{ uri: item.image }}
-          style={styles.image}
-        />
-      )}
+    <ScrollView style={styles.container}>
+      <Image
+        source={{ uri: item.imageUrl }}
+        style={styles.image}
+      />
 
       <Text style={styles.name}>{item.title}</Text>
-      <Text style={styles.author}>{item.author}</Text>
+      <Text style={styles.author}>{item.artist}</Text>
 
       <Text style={styles.price}>
         {item.price.toFixed(2)} zł
@@ -197,7 +196,7 @@ export function GalleryDetailsScreen({ route }: Props) {
           Dziękujemy za ocenę ⭐
         </Text>
       )}
-    </View>
+    </ScrollView>
   );
 }
 

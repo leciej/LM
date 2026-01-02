@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useId } from 'react';
 import {
   View,
   Text,
@@ -19,24 +19,27 @@ type Props = {
 };
 
 export function LineChart({ data, height = 160 }: Props) {
+  const instanceId = useId();
+
   const { width: screenWidth } = Dimensions.get('window');
   const width = screenWidth - 64;
   const padding = 24;
 
+  const safeData = useMemo(
+    () => (data.length >= 2 ? data : [0, 0]),
+    [data]
+  );
+
   const min = 0;
-  const max = Math.max(...data, 1);
+  const max = Math.max(...safeData, 1);
 
   const points = useMemo(() => {
-    if (data.length < 2) {
-      return '';
-    }
-
-    return data
+    return safeData
       .map((v, i) => {
         const x =
           padding +
           (i * (width - padding * 2)) /
-            (data.length - 1);
+            (safeData.length - 1);
 
         const y =
           height -
@@ -47,24 +50,18 @@ export function LineChart({ data, height = 160 }: Props) {
         return `${x},${y}`;
       })
       .join(' ');
-  }, [data, height, width, padding, min, max]);
-
-  /* ===== RENDER ===== */
-
-  if (data.length < 2) {
-    return (
-      <View style={styles.empty}>
-        <Text>Brak danych do wykresu</Text>
-      </View>
-    );
-  }
+  }, [safeData, height, width, padding, min, max]);
 
   return (
-    <View style={styles.container}>
-      <Svg width={width} height={height}>
+    <View style={styles.container} key={`chart-${instanceId}`}>
+      <Svg
+        key={`svg-${instanceId}`}
+        width={width}
+        height={height}
+      >
         <Defs>
           <LinearGradient
-            id="lineGradient"
+            id={`grad-${instanceId}`}
             x1="0"
             y1="0"
             x2="0"
@@ -78,17 +75,17 @@ export function LineChart({ data, height = 160 }: Props) {
         <Polyline
           points={points}
           fill="none"
-          stroke="url(#lineGradient)"
+          stroke={`url(#grad-${instanceId})`}
           strokeWidth={3}
           strokeLinejoin="round"
           strokeLinecap="round"
         />
 
-        {data.map((v, i) => {
+        {safeData.map((v, i) => {
           const x =
             padding +
             (i * (width - padding * 2)) /
-              (data.length - 1);
+              (safeData.length - 1);
 
           const y =
             height -
@@ -97,7 +94,7 @@ export function LineChart({ data, height = 160 }: Props) {
 
           return (
             <Circle
-              key={i}
+              key={`pt-${instanceId}-${i}`}
               cx={x}
               cy={y}
               r={4}
@@ -113,8 +110,11 @@ export function LineChart({ data, height = 160 }: Props) {
           { width, paddingHorizontal: padding },
         ]}
       >
-        {data.map((v, i) => (
-          <Text key={i} style={styles.label}>
+        {safeData.map((v, i) => (
+          <Text
+            key={`lbl-${instanceId}-${i}`}
+            style={styles.label}
+          >
             {v}
           </Text>
         ))}
@@ -123,28 +123,17 @@ export function LineChart({ data, height = 160 }: Props) {
   );
 }
 
-/* =========================
-   STYLES
-   ========================= */
-
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
   },
-
   labels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 6,
   },
-
   label: {
     fontSize: 11,
     fontWeight: '600',
-  },
-
-  empty: {
-    padding: 16,
-    alignItems: 'center',
   },
 });

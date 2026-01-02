@@ -1,10 +1,7 @@
-import { api } from '@/api';
-import { GalleryItemDto } from '@/api/gallery';
+// features/gallery/queries/getGalleryItems.ts
+import { GalleryApi } from '@/api/gallery';
 
-/**
- * QUERY — READ ONLY
- * Pobiera elementy galerii z backendu
- */
-export const getGalleryItemsQuery = async (): Promise<GalleryItemDto[]> => {
-  return api.gallery.getAll();
+export const getGalleryItemsQuery = async () => {
+  const data = await GalleryApi.getAll();
+  return Array.isArray(data) ? data : [];
 };

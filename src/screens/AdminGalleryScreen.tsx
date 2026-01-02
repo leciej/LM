@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,18 +10,17 @@ import {
   ToastAndroid,
   Platform,
 } from 'react-native';
-import { useSyncExternalStore } from 'react';
+import { observer } from 'mobx-react-lite';
 
-import {
-  subscribe,
-  getGallery,
-  removeGallery,
-} from '../features/gallery/store/galleryStore';
-
+import { galleryStore } from '../features/gallery/store/galleryStore';
 import { addActivity } from '../features/activity/store/activityStore';
 
-export function AdminGalleryScreen({ navigation }: any) {
-  const items = useSyncExternalStore(subscribe, getGallery) ?? [];
+export const AdminGalleryScreen = observer(({ navigation }: any) => {
+  const [, force] = useState(0);
+
+  useEffect(() => {
+    galleryStore.load().then(() => force(x => x + 1));
+  }, []);
 
   const showToast = (msg: string) => {
     if (Platform.OS === 'android') {
@@ -39,7 +38,7 @@ export function AdminGalleryScreen({ navigation }: any) {
           text: 'Usuń',
           style: 'destructive',
           onPress: () => {
-            removeGallery(id);
+            galleryStore.remove(id);
             addActivity('REMOVE_GALLERY');
             showToast('Usunięto arcydzieło');
           },
@@ -60,35 +59,25 @@ export function AdminGalleryScreen({ navigation }: any) {
       </Pressable>
 
       <FlatList
-        data={items}
+        data={galleryStore.items}
         keyExtractor={item => item.id}
         numColumns={2}
         columnWrapperStyle={styles.row}
         ListEmptyComponent={
-          <Text style={styles.empty}>
-            Brak arcydzieł
-          </Text>
+          <Text style={styles.empty}>Brak arcydzieł</Text>
         }
         renderItem={({ item }) => (
           <View style={styles.cardWrapper}>
             <View style={styles.card}>
-              {item.image && (
-                <Image
-                  source={{ uri: item.image }}
-                  style={styles.image}
-                />
+              {item.imageUrl && (
+                <Image source={{ uri: item.imageUrl }} style={styles.image} />
               )}
 
               <View style={styles.info}>
-                <Text
-                  style={styles.name}
-                  numberOfLines={2}
-                >
+                <Text style={styles.name} numberOfLines={2}>
                   {item.title}
                 </Text>
-                <Text style={styles.author}>
-                  {item.author}
-                </Text>
+                <Text style={styles.author}>{item.artist}</Text>
               </View>
 
               <Pressable
@@ -99,18 +88,14 @@ export function AdminGalleryScreen({ navigation }: any) {
                   })
                 }
               >
-                <Text style={styles.editText}>
-                  Edytuj
-                </Text>
+                <Text style={styles.editText}>Edytuj</Text>
               </Pressable>
 
               <Pressable
                 style={styles.deleteButton}
                 onPress={() => removeItem(item.id)}
               >
-                <Text style={styles.deleteText}>
-                  Usuń
-                </Text>
+                <Text style={styles.deleteText}>Usuń</Text>
               </Pressable>
             </View>
           </View>
@@ -118,75 +103,33 @@ export function AdminGalleryScreen({ navigation }: any) {
       />
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-
+  title: { fontSize: 22, fontWeight: '700', marginBottom: 12 },
   addButton: {
     backgroundColor: '#1976d2',
     padding: 12,
     borderRadius: 8,
     marginBottom: 12,
   },
-  addText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-
-  row: {
-    justifyContent: 'space-between',
-  },
-
-  cardWrapper: {
-    width: '48%',
-    marginBottom: 12,
-  },
-
+  addText: { color: '#fff', textAlign: 'center', fontWeight: '600' },
+  row: { justifyContent: 'space-between' },
+  cardWrapper: { width: '48%', marginBottom: 12 },
   card: {
     backgroundColor: '#fff',
     borderRadius: 12,
     overflow: 'hidden',
     elevation: 2,
   },
-
-  image: {
-    width: '100%',
-    height: 120,
-  },
-
+  image: { width: '100%', height: 120 },
   info: { padding: 8 },
   name: { fontSize: 14, fontWeight: '600' },
   author: { fontSize: 12, color: '#666' },
-
-  editButton: {
-    backgroundColor: '#ffa000',
-    paddingVertical: 6,
-  },
-  editText: {
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-
-  deleteButton: {
-    backgroundColor: '#d32f2f',
-    paddingVertical: 6,
-  },
-  deleteText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-
-  empty: {
-    textAlign: 'center',
-    marginTop: 40,
-    color: '#666',
-  },
+  editButton: { backgroundColor: '#ffa000', paddingVertical: 6 },
+  editText: { textAlign: 'center', fontWeight: '600' },
+  deleteButton: { backgroundColor: '#d32f2f', paddingVertical: 6 },
+  deleteText: { color: '#fff', textAlign: 'center', fontWeight: '600' },
+  empty: { textAlign: 'center', marginTop: 40, color: '#666' },
 });

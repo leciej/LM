@@ -2,63 +2,36 @@ import { makeAutoObservable, runInAction } from 'mobx';
 import { GalleryItemDto } from '@/api/gallery';
 import { getGalleryItemsQuery } from '../queries/getGalleryItems';
 
-type Listener = () => void;
-
 class GalleryStore {
   items: GalleryItemDto[] = [];
+  loaded = false;
   isLoading = false;
-  error: string | null = null;
-
-  private listeners = new Set<Listener>();
 
   constructor() {
     makeAutoObservable(this);
   }
 
-  subscribe = (listener: Listener) => {
-    this.listeners.add(listener);
-    return () => {
-      this.listeners.delete(listener);
-    };
-  };
+  async load() {
+    if (this.loaded || this.isLoading) return;
 
-  private notify() {
-    this.listeners.forEach(l => l());
-  }
-
-  getSnapshot = () => {
-    return this.items;
-  };
-
-  async loadGallery() {
     this.isLoading = true;
-    this.error = null;
-    this.notify();
 
     try {
       const data = await getGalleryItemsQuery();
-
       runInAction(() => {
         this.items = data;
+        this.loaded = true;
       });
-    } catch (err) {
-      runInAction(() => {
-        this.error = 'Failed to load gallery';
-      });
-      console.error('Gallery load error', err);
     } finally {
       runInAction(() => {
         this.isLoading = false;
       });
-      this.notify();
     }
+  }
+
+  remove(id: string) {
+    this.items = this.items.filter(x => x.id !== id);
   }
 }
 
 export const galleryStore = new GalleryStore();
-
-export const subscribe = (listener: Listener) =>
-  galleryStore.subscribe(listener);
-
-export const getGallery = () =>
-  galleryStore.getSnapshot();

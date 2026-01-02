@@ -11,14 +11,11 @@ type RequestOptions<TBody> = {
   timeoutMs?: number;
 };
 
-const BASE_URL = 'http://10.0.2.2:5000/api';
+const BASE_URL = 'http://10.0.2.2:5225/api'; // ⬅️ POPRAWIONY PORT
 const DEFAULT_TIMEOUT = 15_000;
 
 let authToken: string | null = null;
 
-/**
- * Token ustawiasz po loginie / rejestracji
- */
 export const setAuthToken = (token: string | null) => {
   authToken = token;
 };
@@ -74,24 +71,6 @@ export async function httpRequest<TResponse, TBody = unknown>(
     }
 
     return data as TResponse;
-  } catch (error: any) {
-    if (error.name === 'AbortError') {
-      throw new ApiError({
-        message: 'Request timeout',
-        status: null,
-        url,
-      });
-    }
-
-    if (error instanceof ApiError) {
-      throw error;
-    }
-
-    throw new ApiError({
-      message: error?.message ?? 'Network error',
-      status: null,
-      url,
-    });
   } finally {
     clearTimeout(timeoutId);
   }
