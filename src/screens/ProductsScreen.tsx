@@ -14,7 +14,6 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useProducts } from '../features/products/useProducts';
 import { addItemToCart } from '../features/cart/store/cartStore';
 import type { ProductDto } from '../api/products';
-import type { Product } from '../features/products/mockProducts';
 import type { ProductsStackParamList } from '../navigation/TabsNavigator/ProductsStackNavigator';
 
 type Props = NativeStackScreenProps<
@@ -22,28 +21,22 @@ type Props = NativeStackScreenProps<
   'Products'
 >;
 
-/* =========================
-   DTO → DOMAIN MAP
-   ========================= */
-const mapDtoToProduct = (dto: ProductDto): Product => ({
-  id: dto.id,
-  name: dto.name,
-  artist: '',
-  price: dto.price,
-  description: dto.description ?? '',
-  image: dto.imageUrl,
-});
-
 export function ProductsScreen({ navigation }: Props) {
   const { products, loading, error } = useProducts();
 
   const listRef = useRef<FlatList>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  const handleAddToCart = (dto: ProductDto) => {
-    const product = mapDtoToProduct(dto);
-
-    addItemToCart(product, 'PRODUCTS');
+  const handleAddToCart = (product: ProductDto) => {
+    addItemToCart(
+      {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        imageUrl: product.imageUrl, // ⬅️ KLUCZOWA ZMIANA
+      },
+      'PRODUCTS'
+    );
 
     if (Platform.OS === 'android') {
       ToastAndroid.show(
@@ -81,59 +74,55 @@ export function ProductsScreen({ navigation }: Props) {
           const y = event.nativeEvent.contentOffset.y;
           setShowScrollTop(y > 300);
         }}
-        renderItem={({ item }) => {
-          const product = mapDtoToProduct(item);
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <Pressable
+              onPress={() =>
+                navigation.navigate('ProductDetails', {
+                  product: item,
+                  source: 'PRODUCTS',
+                })
+              }
+            >
+              <View style={styles.row}>
+                {item.imageUrl && (
+                  <Image
+                    source={{ uri: item.imageUrl }}
+                    style={styles.image}
+                  />
+                )}
 
-          return (
-            <View style={styles.card}>
-              <Pressable
-                onPress={() =>
-                  navigation.navigate('ProductDetails', {
-                    product: item,
-                    source: 'PRODUCTS',
-                  })
-                }
-              >
-                <View style={styles.row}>
-                  {product.image && (
-                    <Image
-                      source={{ uri: product.image }}
-                      style={styles.image}
-                    />
+                <View style={styles.info}>
+                  <Text style={styles.name}>
+                    {item.name}
+                  </Text>
+
+                  {!!item.description && (
+                    <Text
+                      style={styles.description}
+                      numberOfLines={2}
+                    >
+                      {item.description}
+                    </Text>
                   )}
 
-                  <View style={styles.info}>
-                    <Text style={styles.name}>
-                      {product.name}
-                    </Text>
-
-                    {!!product.description && (
-                      <Text
-                        style={styles.description}
-                        numberOfLines={2}
-                      >
-                        {product.description}
-                      </Text>
-                    )}
-
-                    <Text style={styles.price}>
-                      {product.price} zł
-                    </Text>
-                  </View>
+                  <Text style={styles.price}>
+                    {item.price} zł
+                  </Text>
                 </View>
-              </Pressable>
+              </View>
+            </Pressable>
 
-              <Pressable
-                style={styles.button}
-                onPress={() => handleAddToCart(item)}
-              >
-                <Text style={styles.buttonText}>
-                  Dodaj do koszyka
-                </Text>
-              </Pressable>
-            </View>
-          );
-        }}
+            <Pressable
+              style={styles.button}
+              onPress={() => handleAddToCart(item)}
+            >
+              <Text style={styles.buttonText}>
+                Dodaj do koszyka
+              </Text>
+            </Pressable>
+          </View>
+        )}
       />
 
       {showScrollTop && (

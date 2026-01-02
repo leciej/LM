@@ -14,7 +14,6 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import type { ProductsStackParamList } from '../navigation/TabsNavigator/ProductsStackNavigator';
-import type { Product } from '../features/products/mockProducts';
 import { addItemToCart } from '../features/cart/store/cartStore';
 import {
   addCommentToStore,
@@ -28,33 +27,34 @@ type Props = NativeStackScreenProps<
   'ProductDetails'
 >;
 
-export function ProductDetailsScreen({ route }: Props) {
+export function ProductDetailsScreen({ route, navigation }: Props) {
   const { product: dto, source } = route.params;
   const { isLoggedIn, user } = useAuth();
   const [commentText, setCommentText] = useState('');
 
-  const product: Product = {
-    id: dto.id,
-    name: dto.name,
-    artist: '—',
-    price: dto.price,
-    description: dto.description ?? '',
-    image: dto.imageUrl,
-  };
-
-  const comments = getCommentsSnapshot(product.id);
+  const comments = getCommentsSnapshot(dto.id);
 
   const handleAddToCart = () => {
     if (!isLoggedIn) return;
 
-    addItemToCart(product, source);
+    addItemToCart(
+      {
+        id: dto.id,
+        name: dto.name,
+        price: dto.price,
+        imageUrl: dto.imageUrl,
+      },
+      source
+    );
 
     if (Platform.OS === 'android') {
       ToastAndroid.show(
-        `Dodano "${product.name}"`,
+        `Dodano "${dto.name}"`,
         ToastAndroid.SHORT
       );
     }
+
+    navigation.goBack(); // ⬅️ POWRÓT DO LISTY PRODUKTÓW
   };
 
   const handleAddComment = () => {
@@ -62,7 +62,7 @@ export function ProductDetailsScreen({ route }: Props) {
     if (!commentText.trim()) return;
 
     addCommentToStore(
-      product.id,
+      dto.id,
       commentText.trim(),
       user.name
     );
@@ -73,19 +73,19 @@ export function ProductDetailsScreen({ route }: Props) {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.hero}>
-        {product.image && (
+        {dto.imageUrl && (
           <Image
-            source={{ uri: product.image }}
+            source={{ uri: dto.imageUrl }}
             style={styles.image}
           />
         )}
 
         <View style={styles.info}>
-          <Text style={styles.name}>{product.name}</Text>
-          <Text style={styles.price}>{product.price} zł</Text>
-          {product.description && (
+          <Text style={styles.name}>{dto.name}</Text>
+          <Text style={styles.price}>{dto.price} zł</Text>
+          {dto.description && (
             <Text style={styles.desc}>
-              {product.description}
+              {dto.description}
             </Text>
           )}
         </View>

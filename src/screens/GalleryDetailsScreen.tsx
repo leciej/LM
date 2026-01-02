@@ -35,7 +35,7 @@ const getRandomRating = () =>
 const getRandomVotes = () =>
   Math.floor(Math.random() * 5) + 2;
 
-export function GalleryDetailsScreen({ route }: Props) {
+export function GalleryDetailsScreen({ route, navigation }: Props) {
   const { isLoggedIn } = useAuth();
 
   const [average, setAverage] = useState(getRandomRating);
@@ -94,16 +94,15 @@ export function GalleryDetailsScreen({ route }: Props) {
     if (!isLoggedIn) return;
 
     addItemToCart(
-  {
-    id: item.id,
-    name: item.title,
-    imageUrl: item.imageUrl,
-    price: item.price,
-    description: `Arcydzieło: ${item.title}`,
-  },
-  'GALLERY'
-);
-
+      {
+        id: item.id,
+        name: item.title,
+        imageUrl: item.imageUrl,
+        price: item.price,
+        description: `Arcydzieło: ${item.title}`,
+      },
+      'GALLERY'
+    );
 
     if (Platform.OS === 'android') {
       ToastAndroid.show(
@@ -111,6 +110,8 @@ export function GalleryDetailsScreen({ route }: Props) {
         ToastAndroid.SHORT
       );
     }
+
+    navigation.goBack(); // ⬅️ POWRÓT DO GALERII
   };
 
   const renderStaticStars = (value: number) =>

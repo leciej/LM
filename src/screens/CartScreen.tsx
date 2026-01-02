@@ -29,6 +29,11 @@ const FALLBACK_IMAGE = 'https://picsum.photos/200/200?blur=1';
 const getKey = (item: CartItem) =>
   `${item.id}::${item.source}`;
 
+const formatPrice = (value: number) =>
+  value
+    .toFixed(2)
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+
 export function CartScreen() {
   const [items, setItems] = useState<CartItem[]>([]);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
@@ -105,21 +110,16 @@ export function CartScreen() {
     refresh();
   };
 
-  /** 🔧 KLUCZOWA POPRAWKA – brak NaN */
-  const productsTotal = items.reduce((sum, item) => {
+  const total = items.reduce((sum, item) => {
     const price = Number(item.price) || 0;
-
     return checked[getKey(item)]
       ? sum + price * item.quantity
       : sum;
   }, 0);
 
   const order = () => {
-    if (!Number.isFinite(productsTotal)) {
-      Alert.alert(
-        'Błąd',
-        'Nieprawidłowa cena produktów'
-      );
+    if (!Number.isFinite(total)) {
+      Alert.alert('Błąd', 'Nieprawidłowa cena');
       return;
     }
 
@@ -139,9 +139,7 @@ export function CartScreen() {
 
     Alert.alert(
       'Zamówienie złożone',
-      `Nakupowałeś badziewia na ${productsTotal.toFixed(
-        2
-      )} zł`
+      `Suma: ${formatPrice(total)} zł`
     );
 
     clearCart();
@@ -157,9 +155,7 @@ export function CartScreen() {
         refresh();
       }}
     >
-      <Text style={styles.swipeDeleteText}>
-        Usuń
-      </Text>
+      <Text style={styles.swipeDeleteText}>Usuń</Text>
     </Pressable>
   );
 
@@ -167,21 +163,13 @@ export function CartScreen() {
     const key = getKey(item);
 
     return (
-      <Swipeable
-        renderRightActions={() =>
-          renderRightActions(item)
-        }
-      >
+      <Swipeable renderRightActions={() => renderRightActions(item)}>
         <View style={styles.rowWrapper}>
           <Pressable onPress={() => toggleOne(key)}>
             <Animated.Text
               style={[
                 styles.checkboxText,
-                {
-                  transform: [
-                    { scale: getScale(key) },
-                  ],
-                },
+                { transform: [{ scale: getScale(key) }] },
               ]}
             >
               {checked[key] ? '☑' : '☐'}
@@ -191,19 +179,13 @@ export function CartScreen() {
           <View style={styles.card}>
             <View style={styles.left}>
               <Image
-                source={{
-                  uri:
-                    item.image ||
-                    FALLBACK_IMAGE,
-                }}
+                source={{ uri: item.imageUrl || FALLBACK_IMAGE }}
                 style={styles.thumb}
               />
               <View>
-                <Text style={styles.name}>
-                  {item.name}
-                </Text>
+                <Text style={styles.name}>{item.name}</Text>
                 <Text style={styles.price}>
-                  {(Number(item.price) || 0).toFixed(2)} zł
+                  {formatPrice(Number(item.price) || 0)} zł
                 </Text>
               </View>
             </View>
@@ -213,54 +195,50 @@ export function CartScreen() {
                 <Pressable
                   style={[
                     styles.qtyBtn,
-                    item.quantity === 1 &&
-                      styles.disabled,
+                    item.quantity === 1 && styles.disabled,
                   ]}
                   disabled={item.quantity === 1}
                   onPress={() => {
-                    decreaseItemInCart(
-                      item.cartItemId
-                    );
+                    decreaseItemInCart(item.cartItemId);
                     refresh();
                   }}
                 >
-                  <Text style={styles.qtyBtnText}>
-                    −
-                  </Text>
+                  <Text style={styles.qtyBtnText}>−</Text>
                 </Pressable>
 
-                <Text style={styles.qty}>
-                  {item.quantity}
-                </Text>
+                <Text style={styles.qty}>{item.quantity}</Text>
 
                 <Pressable
                   style={styles.qtyBtn}
                   onPress={() => {
-                    addItemToCart(
-                      item,
-                      item.source
-                    );
+                    addItemToCart(item, item.source);
                     refresh();
                   }}
                 >
-                  <Text style={styles.qtyBtnText}>
-                    +
-                  </Text>
+                  <Text style={styles.qtyBtnText}>+</Text>
                 </Pressable>
+              </View>
+
+              <View style={styles.itemTotal}>
+                <Text style={styles.itemTotalValue}>
+                  {formatPrice(
+                    Number(item.price) * item.quantity
+                  )}{' '}
+                  zł
+                </Text>
+                <Text style={styles.itemTotalSub}>
+                  za sztukę {formatPrice(Number(item.price) || 0)} zł
+                </Text>
               </View>
 
               <Pressable
                 style={styles.trash}
                 onPress={() => {
-                  removeItemFromCart(
-                    item.cartItemId
-                  );
+                  removeItemFromCart(item.cartItemId);
                   refresh();
                 }}
               >
-                <Text style={styles.trashText}>
-                  🗑
-                </Text>
+                <Text style={styles.trashText}>🗑</Text>
               </Pressable>
             </View>
           </View>
@@ -271,17 +249,11 @@ export function CartScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Koszyk</Text>
-
       {items.length > 0 && (
         <>
-          <Pressable
-            style={styles.selectAll}
-            onPress={toggleAll}
-          >
+          <Pressable style={styles.selectAll} onPress={toggleAll}>
             <Text style={styles.selectAllText}>
-              {allChecked ? '☑' : '☐'} Zaznacz
-              wszystko
+              {allChecked ? '☑' : '☐'} Zaznacz wszystko
             </Text>
           </Pressable>
 
@@ -300,47 +272,29 @@ export function CartScreen() {
         data={items}
         keyExtractor={getKey}
         renderItem={renderItem}
-        contentContainerStyle={
-          styles.listContent
-        }
+        contentContainerStyle={styles.listContent}
         ListEmptyComponent={
-          <Text style={styles.empty}>
-            Koszyk jest pusty
-          </Text>
+          <Text style={styles.empty}>Koszyk jest pusty</Text>
         }
       />
 
       <View style={styles.summary}>
         <View style={styles.summaryRow}>
-          <Text>Wartość produktów</Text>
-          <Text>
-            {productsTotal.toFixed(2)} zł
-          </Text>
-        </View>
-
-        <View style={styles.divider} />
-
-        <View style={styles.summaryRow}>
-          <Text style={styles.totalLabel}>
-            Razem
-          </Text>
+          <Text style={styles.totalLabel}>Razem:</Text>
           <Text style={styles.totalValue}>
-            {productsTotal.toFixed(2)} zł
+            {formatPrice(total)} zł
           </Text>
         </View>
 
         <Pressable
           style={[
             styles.primary,
-            productsTotal === 0 &&
-              styles.disabled,
+            total === 0 && styles.disabled,
           ]}
-          disabled={productsTotal === 0}
+          disabled={total === 0}
           onPress={order}
         >
-          <Text style={styles.primaryText}>
-            ZAMÓW
-          </Text>
+          <Text style={styles.primaryText}>ZAMÓW</Text>
         </Pressable>
       </View>
     </View>
@@ -353,30 +307,26 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#f5f6f8',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
+
   selectAll: { marginBottom: 6 },
-  selectAllText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  selectAllText: { fontSize: 16, fontWeight: '600' },
   removeSelected: { marginBottom: 8 },
   removeSelectedText: {
     color: '#b71c1c',
     fontWeight: '700',
   },
+
   rowWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
   },
+
   checkboxText: {
     fontSize: 20,
     marginRight: 8,
   },
+
   card: {
     flex: 1,
     flexDirection: 'row',
@@ -386,30 +336,33 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+
   left: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+
   thumb: {
     width: 56,
     height: 56,
     borderRadius: 6,
     marginRight: 10,
   },
+
   name: { fontWeight: '700' },
-  price: {
-    marginTop: 4,
-    color: '#2563EB',
-  },
+  price: { marginTop: 4, color: '#2563EB' },
+
   right: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 16,
   },
+
   qtyBtn: {
     borderWidth: 1,
     borderColor: '#d1d5db',
@@ -417,21 +370,35 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 6,
   },
-  qtyBtnText: {
+
+  qtyBtnText: { fontSize: 16, fontWeight: '800' },
+  qty: { marginHorizontal: 10, fontWeight: '800' },
+
+  itemTotal: {
+    minWidth: 130,
+    alignItems: 'flex-end',
+    marginRight: 16,
+  },
+
+  itemTotalValue: {
     fontSize: 16,
     fontWeight: '800',
   },
-  qty: {
-    marginHorizontal: 10,
-    fontWeight: '800',
+
+  itemTotalSub: {
+    fontSize: 11,
+    color: '#6b7280',
   },
+
   trash: {
     backgroundColor: '#fee2e2',
     paddingHorizontal: 8,
     paddingVertical: 6,
     borderRadius: 999,
   },
+
   trashText: { fontSize: 16 },
+
   swipeDelete: {
     backgroundColor: '#b71c1c',
     justifyContent: 'center',
@@ -440,18 +407,22 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderRadius: 10,
   },
+
   swipeDeleteText: {
     color: '#fff',
     fontWeight: '800',
   },
+
   empty: {
     textAlign: 'center',
     marginTop: 40,
     color: '#666',
   },
+
   listContent: {
-    paddingBottom: 170,
+    paddingBottom: 150,
   },
+
   summary: {
     position: 'absolute',
     left: 0,
@@ -462,31 +433,29 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: '#e5e7eb',
   },
+
   summaryRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
+    justifyContent: 'flex-end',
+    alignItems: 'baseline',
+    gap: 8,
+    marginBottom: 12,
   },
-  divider: {
-    height: 1,
-    backgroundColor: '#e5e7eb',
-    marginVertical: 8,
-  },
-  totalLabel: { fontWeight: '800' },
-  totalValue: {
-    fontWeight: '900',
-    fontSize: 18,
-  },
+
+  totalLabel: { fontWeight: '700' },
+  totalValue: { fontWeight: '900', fontSize: 18 },
+
   primary: {
     backgroundColor: '#2563EB',
     padding: 14,
     borderRadius: 10,
-    marginTop: 12,
   },
+
   primaryText: {
     color: '#fff',
     textAlign: 'center',
     fontWeight: '900',
   },
+
   disabled: { opacity: 0.5 },
 });

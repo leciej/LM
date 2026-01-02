@@ -4,7 +4,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { ProductsStackNavigator } from './ProductsStackNavigator';
 import { GalleryStackNavigator } from '../GalleryStackNavigator';
-import { CartScreen } from '../../screens/CartScreen';
+import { CartStackNavigator } from '../CartStackNavigator';
 import { ProfileScreen } from '../../screens/ProfileScreen';
 
 import {
@@ -88,7 +88,7 @@ export function TabsNavigator() {
 
       <Tab.Screen
         name="Cart"
-        component={CartScreen}
+        component={CartStackNavigator}
         options={{
           title: 'Koszyk',
           tabBarBadge:
