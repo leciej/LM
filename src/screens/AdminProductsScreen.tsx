@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,9 @@ import { useProducts } from '../features/products/useProducts';
 import { addActivity } from '../features/activity/store/activityStore';
 
 export function AdminProductsScreen({ navigation }: any) {
+  const listRef = useRef<FlatList>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
   const { products, loading, error, remove, reload } = useProducts();
 
   useFocusEffect(
@@ -24,6 +27,13 @@ export function AdminProductsScreen({ navigation }: any) {
       reload();
     }, [reload])
   );
+
+  const scrollToTop = () => {
+    listRef.current?.scrollToOffset({
+      offset: 0,
+      animated: true,
+    });
+  };
 
   const toast = (msg: string) => {
     if (Platform.OS === 'android') {
@@ -75,8 +85,6 @@ export function AdminProductsScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Produkty</Text>
-
       <Pressable
         style={styles.addButton}
         onPress={() => navigation.navigate('AddProduct')}
@@ -85,9 +93,16 @@ export function AdminProductsScreen({ navigation }: any) {
       </Pressable>
 
       <FlatList
+        ref={listRef}
         data={products}
         keyExtractor={item => item.id}
-        contentContainerStyle={{ paddingBottom: 24 }}
+        contentContainerStyle={{ paddingBottom: 120 }}
+        onScroll={e => {
+          setShowScrollTop(
+            e.nativeEvent.contentOffset.y > 300
+          );
+        }}
+        scrollEventThrottle={16}
         ListEmptyComponent={
           <Text style={styles.subtitle}>Brak produktów</Text>
         }
@@ -138,6 +153,15 @@ export function AdminProductsScreen({ navigation }: any) {
           </View>
         )}
       />
+
+      {showScrollTop && (
+        <Pressable
+          style={styles.scrollTopButton}
+          onPress={scrollToTop}
+        >
+          <Text style={styles.scrollTopText}>⬆</Text>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -153,12 +177,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-
-  title: {
-    fontSize: 22,
-    fontWeight: '800',
-    marginBottom: 12,
   },
 
   subtitle: {
@@ -261,5 +279,24 @@ const styles = StyleSheet.create({
     color: '#fff',
     textAlign: 'center',
     fontWeight: '700',
+  },
+
+  scrollTopButton: {
+    position: 'absolute',
+    right: 20,
+    bottom: 30,
+    backgroundColor: '#2563EB',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 6,
+  },
+
+  scrollTopText: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: '800',
   },
 });

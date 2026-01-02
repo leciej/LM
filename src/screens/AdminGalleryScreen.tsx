@@ -16,9 +16,14 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import { galleryStore } from '../features/gallery/store/galleryStore';
 import { addActivity } from '../features/activity/store/activityStore';
+import { GalleryApi } from '../api/gallery/GalleryApi';
 
 export const AdminGalleryScreen = observer(({ navigation }: any) => {
+  const listRef = useRef<FlatList>(null);
+
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useFocusEffect(
@@ -26,6 +31,13 @@ export const AdminGalleryScreen = observer(({ navigation }: any) => {
       galleryStore.load(true);
     }, [])
   );
+
+  const scrollToTop = () => {
+    listRef.current?.scrollToOffset({
+      offset: 0,
+      animated: true,
+    });
+  };
 
   const showToast = (msg: string) => {
     if (Platform.OS === 'android') {
@@ -60,11 +72,19 @@ export const AdminGalleryScreen = observer(({ navigation }: any) => {
         {
           text: 'Usuń',
           style: 'destructive',
-          onPress: () => {
-            galleryStore.remove(id);
-            addActivity('REMOVE_GALLERY');
-            showToast('Usunięto arcydzieło');
-            setActiveId(null);
+          onPress: async () => {
+            try {
+              await GalleryApi.delete(id);
+              galleryStore.remove(id);
+              addActivity('REMOVE_GALLERY');
+              showToast('Usunięto arcydzieło');
+              setActiveId(null);
+            } catch {
+              Alert.alert(
+                'Błąd',
+                'Nie udało się usunąć arcydzieła'
+              );
+            }
           },
         },
       ]
@@ -73,8 +93,7 @@ export const AdminGalleryScreen = observer(({ navigation }: any) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Arcydzieła</Text>
-
+      
       <Pressable
         style={styles.addButton}
         onPress={() => navigation.navigate('AddGallery')}
@@ -83,10 +102,18 @@ export const AdminGalleryScreen = observer(({ navigation }: any) => {
       </Pressable>
 
       <FlatList
+        ref={listRef}
         data={galleryStore.items}
         keyExtractor={item => item.id}
         numColumns={2}
         columnWrapperStyle={styles.row}
+        contentContainerStyle={styles.content}
+        onScroll={e => {
+          setShowScrollTop(
+            e.nativeEvent.contentOffset.y > 300
+          );
+        }}
+        scrollEventThrottle={16}
         ListEmptyComponent={
           <Text style={styles.empty}>Brak arcydzieł</Text>
         }
@@ -97,14 +124,21 @@ export const AdminGalleryScreen = observer(({ navigation }: any) => {
             <View style={styles.cardWrapper}>
               <Pressable
                 onPress={() => toggleOverlay(item.id)}
-                style={styles.imageContainer}
+                style={styles.card}
               >
-                {item.imageUrl && (
-                  <Image
-                    source={{ uri: item.imageUrl }}
-                    style={styles.image}
-                  />
-                )}
+                <Image
+                  source={{ uri: item.imageUrl }}
+                  style={styles.image}
+                />
+
+                <View style={styles.info}>
+                  <Text style={styles.name} numberOfLines={2}>
+                    {item.title}
+                  </Text>
+                  <Text style={styles.author}>
+                    {item.artist}
+                  </Text>
+                </View>
 
                 {isActive && (
                   <Animated.View
@@ -137,19 +171,19 @@ export const AdminGalleryScreen = observer(({ navigation }: any) => {
                   </Animated.View>
                 )}
               </Pressable>
-
-              <View style={styles.info}>
-                <Text style={styles.name} numberOfLines={2}>
-                  {item.title}
-                </Text>
-                <Text style={styles.author}>
-                  {item.artist}
-                </Text>
-              </View>
             </View>
           );
         }}
       />
+
+      {showScrollTop && (
+        <Pressable
+          style={styles.scrollTopButton}
+          onPress={scrollToTop}
+        >
+          <Text style={styles.scrollTopText}>⬆</Text>
+        </Pressable>
+      )}
     </View>
   );
 });
@@ -167,12 +201,14 @@ const styles = StyleSheet.create({
   addText: { color: '#fff', textAlign: 'center', fontWeight: '600' },
 
   row: { justifyContent: 'space-between' },
+  content: { paddingBottom: 100 },
+
   cardWrapper: { width: '48%', marginBottom: 16 },
 
-  imageContainer: {
+  card: {
+    backgroundColor: '#fff',
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: '#fff',
     elevation: 4,
   },
 
@@ -180,6 +216,13 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 140,
   },
+
+  info: {
+    padding: 10,
+  },
+
+  name: { fontSize: 14, fontWeight: '600' },
+  author: { fontSize: 12, color: '#666', marginTop: 2 },
 
   overlay: {
     ...StyleSheet.absoluteFillObject,
@@ -209,9 +252,23 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 
-  info: { paddingTop: 8 },
-  name: { fontSize: 14, fontWeight: '600' },
-  author: { fontSize: 12, color: '#666' },
-
   empty: { textAlign: 'center', marginTop: 40, color: '#666' },
+
+  scrollTopButton: {
+    position: 'absolute',
+    right: 20,
+    bottom: 30,
+    backgroundColor: '#2563EB',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 6,
+  },
+  scrollTopText: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: '800',
+  },
 });
