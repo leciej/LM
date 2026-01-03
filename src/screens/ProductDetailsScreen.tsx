@@ -26,6 +26,29 @@ type Props = NativeStackScreenProps<
   "ProductDetails"
 >;
 
+/* =========================
+   HELPERS
+   ========================= */
+
+function formatRelativeDate(dateString: string): string {
+  const now = new Date();
+  const date = new Date(dateString);
+
+  const diffMs = now.getTime() - date.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
+
+  if (diffSec < 60) return "przed chwilą";
+  if (diffMin < 60) return `${diffMin} min temu`;
+  if (diffHour < 24) return `${diffHour} godz. temu`;
+  if (diffDay === 1) return "wczoraj";
+  if (diffDay < 7) return `${diffDay} dni temu`;
+
+  return date.toLocaleDateString("pl-PL");
+}
+
 export function ProductDetailsScreen({ route, navigation }: Props) {
   const { product: dto, source } = route.params;
 
@@ -132,14 +155,22 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
         onPress={handleAddToCart}
       />
 
-      <Text style={styles.sectionTitle}>Komentarze</Text>
+      {/* 🔢 LICZNIK KOMENTARZY */}
+      <Text style={styles.sectionTitle}>
+        Komentarze ({comments.length})
+      </Text>
 
       <FlatList
         data={comments}
         keyExtractor={item => item.id}
         renderItem={({ item }) => (
           <View style={styles.comment}>
-            <Text style={styles.author}>{item.author}</Text>
+            <View style={styles.commentHeader}>
+              <Text style={styles.author}>{item.author}</Text>
+              <Text style={styles.date}>
+                {formatRelativeDate(item.createdAt)}
+              </Text>
+            </View>
             <Text>{item.text}</Text>
           </View>
         )}
@@ -184,19 +215,38 @@ const styles = StyleSheet.create({
   name: { fontSize: 20, fontWeight: "700" },
   price: { marginBottom: 8 },
   desc: { color: "#555" },
+
   sectionTitle: {
     marginTop: 24,
     fontSize: 18,
     fontWeight: "700",
   },
+
   comment: {
     padding: 8,
     backgroundColor: "#eee",
     borderRadius: 6,
     marginBottom: 6,
   },
+
+  commentHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 4,
+  },
+
   author: { fontWeight: "700" },
-  empty: { fontStyle: "italic", color: "#666" },
+
+  date: {
+    fontSize: 12,
+    color: "#666",
+  },
+
+  empty: {
+    fontStyle: "italic",
+    color: "#666",
+  },
+
   input: {
     borderWidth: 1,
     borderColor: "#ccc",

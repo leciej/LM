@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,13 +10,13 @@ import {
   ToastAndroid,
   Platform,
   ScrollView,
-} from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
+} from "react-native";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import { galleryStore } from '@/features/gallery/store/galleryStore';
-import { addItemToCart } from '@/features/cart/store/cartStore';
-import { useAuth } from '@/auth/AuthContext';
-import { addRating } from '@/features/ratings/store/ratingsStore';
+import { galleryStore } from "@/features/gallery/store/galleryStore";
+import { addItemToCart } from "@/features/cart/store/cartStore";
+import { useAuth } from "@/auth/AuthContext";
+import { GalleryRatingsApi } from "@/api/galleryRatings/galleryRatingsApi";
 
 type GalleryStackParamList = {
   Gallery: undefined;
@@ -27,22 +27,45 @@ type GalleryStackParamList = {
 
 type Props = NativeStackScreenProps<
   GalleryStackParamList,
-  'GalleryDetails'
+  "GalleryDetails"
 >;
 
-const getRandomRating = () =>
-  Math.round((Math.random() * 1.5 + 3.5) * 10) / 10;
+/* =========================
+   RANDOM (UI ONLY)
+   ========================= */
+
 const getRandomVotes = () =>
-  Math.floor(Math.random() * 5) + 2;
+  Math.floor(Math.random() * 5) + 2; // 2–6
+
+const getRandomRatingValue = () =>
+  Math.floor(Math.random() * 2) + 4; // 4 albo 5
+
+const toast = (msg: string) => {
+  if (Platform.OS === "android") {
+    ToastAndroid.show(msg, ToastAndroid.SHORT);
+  }
+};
 
 export function GalleryDetailsScreen({ route, navigation }: Props) {
   const { isLoggedIn } = useAuth();
 
-  const [average, setAverage] = useState(getRandomRating);
-  const [votes, setVotes] = useState(getRandomVotes);
+  /* =========================
+     STATE (BACKEND)
+     ========================= */
+
+  const [average, setAverage] = useState(0);
+  const [votes, setVotes] = useState(0);
   const [myRating, setMyRating] = useState<number | null>(null);
+
+  /* =========================
+     STATE (UI)
+     ========================= */
+
   const [previewRating, setPreviewRating] =
     useState<number | null>(null);
+
+  const randomVotesRef = useRef(getRandomVotes());
+  const randomRatingValueRef = useRef(getRandomRatingValue());
 
   const scales = useRef(
     Array.from({ length: 5 }, () => new Animated.Value(1))
@@ -51,6 +74,25 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
   const { galleryId } = route.params;
   const item = galleryStore.items.find(g => g.id === galleryId);
 
+  /* =========================
+     LOAD RATINGS
+     ========================= */
+
+  const loadRatings = useCallback(async () => {
+    const res =
+      await GalleryRatingsApi.getByGalleryItemId(galleryId);
+
+    setAverage(res.average);
+    setVotes(res.votes);
+    setMyRating(res.myRating);
+  }, [galleryId]);
+
+  useEffect(() => {
+    loadRatings().catch(() =>
+      toast("Nie udało się pobrać ocen")
+    );
+  }, [loadRatings]);
+
   if (!item) {
     return (
       <View style={styles.container}>
@@ -58,6 +100,10 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
       </View>
     );
   }
+
+  /* =========================
+     HELPERS
+     ========================= */
 
   const animateStar = (index: number) => {
     Animated.sequence([
@@ -72,21 +118,26 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
     ]).start();
   };
 
-  const commitRating = (value: number) => {
+  const commitRating = async (value: number) => {
     if (myRating !== null) return;
 
-    const newAverage =
-      (average * votes + value) / (votes + 1);
+    try {
+      await GalleryRatingsApi.create(galleryId, {
+        clientId: 1,
+        value,
+      });
 
-    setAverage(Math.round(newAverage * 10) / 10);
-    setVotes(votes + 1);
-    setMyRating(value);
-    setPreviewRating(null);
+      setMyRating(value);
+      await loadRatings();
 
-    addRating(item.id);
+      for (let i = 0; i < value; i++) {
+        animateStar(i);
+      }
 
-    for (let i = 0; i < value; i++) {
-      animateStar(i);
+      toast("Dodano ocenę ⭐");
+    } catch {
+      toast("Nie udało się dodać oceny");
+      await loadRatings();
     }
   };
 
@@ -101,95 +152,130 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
         price: item.price,
         description: `Arcydzieło: ${item.title}`,
       },
-      'GALLERY'
+      "GALLERY"
     );
 
-    if (Platform.OS === 'android') {
-      ToastAndroid.show(
-        `Dodano "${item.title}" do koszyka`,
-        ToastAndroid.SHORT
-      );
-    }
-
-    navigation.goBack(); // ⬅️ POWRÓT DO GALERII
+    toast(`Dodano "${item.title}" do koszyka`);
+    navigation.goBack();
   };
 
-  const renderStaticStars = (value: number) =>
-    [0, 1, 2, 3, 4].map(i => (
-      <Text
-        key={i}
-        style={[
-          styles.star,
-          i < value && styles.starActive,
-        ]}
-      >
-        ★
-      </Text>
-    ));
+  /* =========================
+     WIZUALNA MATEMATYKA
+     ========================= */
 
-  const renderInteractiveStars = () => {
-    const active = previewRating ?? myRating ?? 0;
+  const fakeVotes = randomVotesRef.current;
+  const fakeValue = randomRatingValueRef.current;
 
-    return [0, 1, 2, 3, 4].map(i => (
-      <Pressable
-        key={i}
-        onPressIn={() => setPreviewRating(i + 1)}
-        onPressOut={() => setPreviewRating(null)}
-        onPress={() => commitRating(i + 1)}
-        disabled={myRating !== null}
-      >
+  const realVotes = votes;
+  const totalVotes = fakeVotes + realVotes;
+
+  const realSum = average * realVotes;
+  const fakeSum = fakeVotes * fakeValue;
+
+  const displayedAverage =
+    totalVotes > 0
+      ? Math.round(((realSum + fakeSum) / totalVotes) * 10) / 10
+      : 0;
+
+  const displayedVotes = totalVotes;
+
+  /* =========================
+     GWIAZDKI ŚREDNIEJ (½)
+     ========================= */
+
+  const fullStars = Math.floor(displayedAverage);
+  const hasHalfStar =
+    displayedAverage - fullStars >= 0.5;
+  const emptyStars =
+    5 - fullStars - (hasHalfStar ? 1 : 0);
+
+  const myStars = previewRating ?? myRating ?? 0;
+
+  const renderAverageStars = () => (
+    <>
+      {Array.from({ length: fullStars }).map((_, i) => (
+        <Text key={`f-${i}`} style={[styles.star, styles.starActive]}>
+          ★
+        </Text>
+      ))}
+      {hasHalfStar && (
+        <Text style={[styles.star, styles.starHalf]}>★</Text>
+      )}
+      {Array.from({ length: emptyStars }).map((_, i) => (
+        <Text key={`e-${i}`} style={styles.star}>
+          ★
+        </Text>
+      ))}
+    </>
+  );
+
+  const renderMyStars = () =>
+    [0, 1, 2, 3, 4].map(i => {
+      const star = (
         <Animated.Text
           style={[
             styles.star,
-            i < active && styles.starActive,
+            i < myStars && styles.starActive,
             { transform: [{ scale: scales[i] }] },
           ]}
         >
           ★
         </Animated.Text>
-      </Pressable>
-    ));
-  };
+      );
+
+      return (
+        <Pressable
+          key={i}
+          onPressIn={() => setPreviewRating(i + 1)}
+          onPressOut={() => setPreviewRating(null)}
+          onPress={() => commitRating(i + 1)}
+          disabled={myRating !== null}
+        >
+          {star}
+        </Pressable>
+      );
+    });
+
+  /* =========================
+     RENDER
+     ========================= */
 
   return (
     <ScrollView style={styles.container}>
-      <Image
-        source={{ uri: item.imageUrl }}
-        style={styles.image}
-      />
+      <Image source={{ uri: item.imageUrl }} style={styles.image} />
 
       <Text style={styles.name}>{item.title}</Text>
       <Text style={styles.author}>{item.artist}</Text>
 
-      <Text style={styles.price}>
-        {item.price.toFixed(2)} zł
-      </Text>
+      <Text style={styles.price}>{item.price.toFixed(2)} zł</Text>
 
       <Button
         title={
           isLoggedIn
-            ? 'Dodaj do koszyka'
-            : 'Zaloguj się, aby dodać do koszyka'
+            ? "Dodaj do koszyka"
+            : "Zaloguj się, aby dodać do koszyka"
         }
         disabled={!isLoggedIn}
         onPress={handleAddToCart}
       />
 
+      {/* ŚREDNIA */}
       <View style={styles.ratingRow}>
         <View style={styles.starsRow}>
-          {renderStaticStars(Math.round(average))}
+          {renderAverageStars()}
         </View>
         <Text style={styles.ratingText}>
-          {average} / 5 ({votes} ocen)
+          {displayedAverage} / 5 ({displayedVotes} ocen)
         </Text>
       </View>
 
+      {/* TWOJA OCENA */}
       <Text style={styles.sectionTitle}>
-        {myRating ? 'Twoja ocena' : 'Oceń arcydzieło'}
+        {myRating ? "Twoja ocena" : "Oceń arcydzieło"}
       </Text>
 
       <View style={styles.starsRow}>
-        {renderInteractiveStars()}
+        {renderMyStars()}
       </View>
 
       {myRating && (
@@ -201,64 +287,35 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
   );
 }
 
+/* =========================
+   STYLES
+   ========================= */
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: '#fff',
-  },
+  container: { flex: 1, padding: 16, backgroundColor: "#fff" },
   image: {
-    width: '100%',
+    width: "100%",
     height: 260,
     borderRadius: 14,
     marginBottom: 16,
-    resizeMode: 'cover',
-    backgroundColor: '#eee',
+    backgroundColor: "#eee",
   },
-  name: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  author: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
-  price: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#2563EB',
-    marginBottom: 12,
-  },
-  ratingRow: {
-    marginTop: 16,
-    marginBottom: 16,
-  },
-  starsRow: {
-    flexDirection: 'row',
-  },
+  name: { fontSize: 22, fontWeight: "700" },
+  author: { fontSize: 14, color: "#666" },
+  price: { fontSize: 20, fontWeight: "700", color: "#2563EB" },
+  ratingRow: { marginVertical: 16 },
+  starsRow: { flexDirection: "row" },
   star: {
     fontSize: 34,
-    color: '#ccc',
+    color: "#ccc",
     marginRight: 4,
   },
-  starActive: {
-    color: '#f5b301',
+  starActive: { color: "#f5b301" },
+  starHalf: {
+    color: "#f5b301",
+    opacity: 0.5,
   },
-  ratingText: {
-    marginTop: 4,
-    fontSize: 14,
-    color: '#444',
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  myRatingText: {
-    marginTop: 8,
-    fontSize: 14,
-    color: '#2563EB',
-  },
+  ratingText: { marginTop: 4, fontSize: 14, color: "#444" },
+  sectionTitle: { fontSize: 16, fontWeight: "700", marginBottom: 8 },
+  myRatingText: { marginTop: 8, fontSize: 14, color: "#2563EB" },
 });
