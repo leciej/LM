@@ -2,7 +2,6 @@ import React, {
   useCallback,
   useRef,
   useState,
-  useMemo,
   useEffect,
 } from 'react';
 import {
@@ -60,7 +59,7 @@ function GalleryScreen() {
   );
 
   /* =========================
-     REACT TO HEADER HAMBURGER
+     SORT MENU FROM HEADER
      ========================= */
 
   useEffect(() => {
@@ -70,11 +69,11 @@ function GalleryScreen() {
   }, [route.params?.openSortMenu]);
 
   /* =========================
-     SORTED ITEMS
+     SORT (NO useMemo)
      ========================= */
 
-  const sortedItems = useMemo(() => {
-    const copy = [...galleryStore.items];
+  const sortedItems = (() => {
+    const copy = galleryStore.items.slice();
 
     switch (sort) {
       case 'PRICE_ASC':
@@ -104,7 +103,7 @@ function GalleryScreen() {
           a.title.localeCompare(b.title)
         );
     }
-  }, [sort]); // ✅ poprawne dla MobX
+  })();
 
   /* =========================
      HANDLERS
@@ -134,7 +133,6 @@ function GalleryScreen() {
 
   return (
     <View style={styles.container}>
-      {/* SORT MENU OVERLAY */}
       {menuOpen && (
         <Pressable
           style={styles.overlay}
@@ -179,7 +177,6 @@ function GalleryScreen() {
         </Pressable>
       )}
 
-      {/* LIST */}
       <FlatList
         ref={listRef}
         data={sortedItems}
@@ -187,11 +184,11 @@ function GalleryScreen() {
         numColumns={2}
         columnWrapperStyle={styles.row}
         contentContainerStyle={styles.content}
-        onScroll={e => {
+        onScroll={e =>
           setShowScrollTop(
             e.nativeEvent.contentOffset.y > 300
-          );
-        }}
+          )
+        }
         scrollEventThrottle={16}
         ListEmptyComponent={
           <Text style={styles.empty}>
@@ -206,7 +203,6 @@ function GalleryScreen() {
                   source={{ uri: item.imageUrl }}
                   style={styles.image}
                 />
-
                 <View style={styles.textBox}>
                   <Text
                     style={styles.name}
@@ -227,7 +223,6 @@ function GalleryScreen() {
         )}
       />
 
-      {/* SCROLL TO TOP */}
       {showScrollTop && (
         <Pressable
           style={styles.scrollTopButton}
@@ -325,10 +320,7 @@ const styles = StyleSheet.create({
 
   overlay: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    inset: 0,
     zIndex: 10,
   },
   menu: {
