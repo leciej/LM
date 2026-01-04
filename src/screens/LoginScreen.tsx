@@ -31,7 +31,6 @@ export function LoginScreen() {
 
   const toggle = (target: 'user' | 'admin', anim: Animated.Value) => {
     const isOpen = mode === target;
-
     setMode(isOpen ? null : target);
 
     Animated.timing(anim, {
@@ -54,7 +53,6 @@ export function LoginScreen() {
       outputRange: [0, 170],
     }),
     opacity: anim,
-    overflow: 'hidden',
   });
 
   const handleLogin = async () => {
@@ -91,7 +89,9 @@ export function LoginScreen() {
         </Text>
       </Pressable>
 
-      <Animated.View style={formStyle(animUser)}>
+      <Animated.View
+        style={[styles.animatedForm, formStyle(animUser)]}
+      >
         <View style={styles.form}>
           <TextInput
             placeholder="Login lub email"
@@ -126,7 +126,9 @@ export function LoginScreen() {
         </Text>
       </Pressable>
 
-      <Animated.View style={formStyle(animAdmin)}>
+      <Animated.View
+        style={[styles.animatedForm, formStyle(animAdmin)]}
+      >
         <View style={styles.form}>
           <TextInput
             placeholder="Login lub email"
@@ -180,6 +182,9 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginBottom: 8,
     alignItems: 'center',
+  },
+  animatedForm: {
+    overflow: 'hidden', // ✅ TU JEST KLUCZ
   },
   form: {
     marginBottom: 8,

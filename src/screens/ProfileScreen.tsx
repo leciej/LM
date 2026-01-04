@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
 import { useSyncExternalStore } from 'react';
-import { useAuth } from '../auth/AuthContext';
+import { useAuth, type UserRole } from '../auth/AuthContext';
 
 import {
   subscribe as subscribePurchases,
@@ -29,12 +29,13 @@ import {
 } from '../features/activity/store/activityStore';
 
 /* =========================
-   TYPES & META
+   ROLE META
    ========================= */
 
-type Role = 'USER' | 'ADMIN';
-
-const ROLE_META: Record<Role, { label: string; color: string }> = {
+const ROLE_META: Record<
+  Exclude<UserRole, 'GUEST'>,
+  { label: string; color: string }
+> = {
   USER: {
     label: '👤 Użytkownik',
     color: '#1976d2',
@@ -46,12 +47,14 @@ const ROLE_META: Record<Role, { label: string; color: string }> = {
 };
 
 const FALLBACK_META = {
-  label: '—',
+  label: '👤 Gość',
   color: '#6B7280',
 };
 
-const roleMeta = (role: Role | null) =>
-  role ? ROLE_META[role] : FALLBACK_META;
+function roleMeta(role: UserRole | null) {
+  if (!role || role === 'GUEST') return FALLBACK_META;
+  return ROLE_META[role];
+}
 
 /* =========================
    HELPERS
@@ -96,9 +99,8 @@ function timeAgo(timestamp: number) {
    ========================= */
 
 export function ProfileScreen() {
-  const { role, logout, user } = useAuth();
-  const meta = roleMeta(role);
-  const isAdmin = role === 'ADMIN';
+  const { user, logout, isAdmin } = useAuth();
+  const meta = roleMeta(user?.role ?? null);
 
   const purchasedCount = useSyncExternalStore(
     subscribePurchases,
@@ -145,7 +147,7 @@ export function ProfileScreen() {
         </View>
 
         <Text style={styles.title}>
-          {user?.name ?? (isAdmin ? 'Administrator' : 'Gość')}
+          {user?.name ?? 'Gość'}
         </Text>
 
         <Text style={styles.subtitle}>{user?.email}</Text>
@@ -168,7 +170,9 @@ export function ProfileScreen() {
             visibleActivities.map((a, i) => (
               <View key={i} style={styles.activityRow}>
                 <Text>{label(a.type)}</Text>
-                <Text style={styles.time}>{timeAgo(a.createdAt)}</Text>
+                <Text style={styles.time}>
+                  {timeAgo(a.createdAt)}
+                </Text>
               </View>
             ))
           )}
@@ -180,7 +184,9 @@ export function ProfileScreen() {
           </Text>
 
           <Text>✅ Kupione produkty: {purchasedCount}</Text>
-          <Text>💸 Wydane pieniądze: {totalSpent.toFixed(2)} zł</Text>
+          <Text>
+            💸 Wydane pieniądze: {totalSpent.toFixed(2)} zł
+          </Text>
           <Text>⭐ Ocenione: {ratedCount}</Text>
           <Text>⭐ Średnia: {avgRating.toFixed(1)}</Text>
           <Text>💬 Komentarze: {commentsCount}</Text>
@@ -216,7 +222,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
-    backgroundColor: '#1976d2', // 🔵 taki sam jak przycisk logowania
+    backgroundColor: '#1976d2',
   },
   avatarText: {
     fontSize: 32,
