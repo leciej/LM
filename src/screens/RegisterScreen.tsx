@@ -13,15 +13,19 @@ import { useNavigation } from '@react-navigation/native';
 
 type RegisterPayload = {
   name: string;
+  surname: string;
+  login: string;
   email: string;
   password: string;
 };
 
 export function RegisterScreen() {
-  const { register } = useAuth();
+  const { login } = useAuth();
   const navigation = useNavigation();
 
   const [name, setName] = useState('');
+  const [surname, setSurname] = useState('');
+  const [loginValue, setLoginValue] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] =
@@ -46,26 +50,22 @@ export function RegisterScreen() {
   };
 
   const validate = (): boolean => {
-    if (!name.trim()) {
-      setError('Podaj imię');
-      return false;
-    }
-
-    if (!email.includes('@')) {
-      setError('Niepoprawny email');
-      return false;
-    }
+    if (!name.trim()) return setError('Podaj imię'), false;
+    if (!surname.trim())
+      return setError('Podaj nazwisko'), false;
+    if (!loginValue.trim())
+      return setError('Podaj login'), false;
+    if (!email.includes('@'))
+      return setError('Niepoprawny email'), false;
 
     const passError = validatePassword(password);
-    if (passError) {
-      setError(passError);
-      return false;
-    }
+    if (passError)
+      return setError(passError), false;
 
-    if (password !== confirmPassword) {
-      setError('Hasła nie są takie same');
-      return false;
-    }
+    if (password !== confirmPassword)
+      return (
+        setError('Hasła nie są takie same'), false
+      );
 
     setError(null);
     return true;
@@ -76,6 +76,8 @@ export function RegisterScreen() {
 
     const payload: RegisterPayload = {
       name: name.trim(),
+      surname: surname.trim(),
+      login: loginValue.trim(),
       email: email.trim().toLowerCase(),
       password,
     };
@@ -83,14 +85,23 @@ export function RegisterScreen() {
     try {
       setLoading(true);
 
-      await new Promise<void>(resolve =>
-        setTimeout(resolve, 600)
+      const res = await fetch(
+        'http://localhost:5000/api/users/register',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        }
       );
 
-      register({
-        name: payload.name,
-        email: payload.email,
-      });
+      if (!res.ok) {
+        throw new Error();
+      }
+
+      // auto-login po rejestracji
+      await login(payload.login, password);
 
       Alert.alert(
         'Rejestracja zakończona',
@@ -115,6 +126,21 @@ export function RegisterScreen() {
         placeholder="Imię"
         value={name}
         onChangeText={setName}
+        style={styles.input}
+      />
+
+      <TextInput
+        placeholder="Nazwisko"
+        value={surname}
+        onChangeText={setSurname}
+        style={styles.input}
+      />
+
+      <TextInput
+        placeholder="Login"
+        value={loginValue}
+        onChangeText={setLoginValue}
+        autoCapitalize="none"
         style={styles.input}
       />
 
@@ -166,9 +192,7 @@ export function RegisterScreen() {
       </View>
 
       {error && (
-        <Text style={styles.error}>
-          {error}
-        </Text>
+        <Text style={styles.error}>{error}</Text>
       )}
 
       <Pressable
@@ -192,9 +216,7 @@ export function RegisterScreen() {
         style={[styles.button, styles.backButton]}
         onPress={() => navigation.goBack()}
       >
-        <Text style={styles.buttonText}>
-          Wróć
-        </Text>
+        <Text style={styles.buttonText}>Wróć</Text>
       </Pressable>
     </View>
   );

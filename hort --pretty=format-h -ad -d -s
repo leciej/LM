@@ -1,0 +1,38 @@
+* [33m5884415[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m walka_z_adminem
+* [33m10dabab[m gwiazdki_dzialaja
+* [33m65f71dc[m dodane_komentarze
+* [33md39d8ca[m wszystko_wyswietlone
+* [33m9702ae2[m zamknięty_wyglad
+* [33md6e3882[m koszyk_dziala
+* [33m73dc543[m produkty_i_galeria_dziala
+* [33mb28285d[m 2_galerie_dzialajace
+* [33m0a6e8e6[m działa_galeria
+* [33md55e614[m walka_z_galeria
+* [33m692781e[m dziala_z_api
+* [33ma21baa6[m pod_backend
+*   [33md6b4c38[m Merge branch 'main' of https://github.com/leciej/LM
+[32m|[m[33m\[m  
+[32m|[m * [33mec54aee[m galeria_bez_danych
+* [33m|[m [33md94d58d[m[33m ([m[1;32mbackup-before-rebase[m[33m)[m prawie_dziala_z_api
+[33m|[m[33m/[m  
+* [33m0d2fabf[m aplikacja_dziala
+* [33mb7132ad[m api_bez_bledow
+* [33m33c8751[m dodawanie_api
+* [33m037b3ae[m[33m ([m[1;33mtag: [m[1;33mcheckpoint-gotowe_v2[m[33m)[m gotowe v2
+* [33mdc24ebe[m[33m ([m[1;33mtag: [m[1;33mcheckpoint-gotowe[m[33m)[m gotowe
+* [33m07ee5f5[m[33m ([m[1;33mtag: [m[1;33mcheckpoint-produkty_arcydziela_bez_bledow[m[33m)[m produkty_arcydziela_bez_bledow
+* [33m3f3d6bd[m[33m ([m[1;33mtag: [m[1;33mcheckpoint-products_and_arts_done[m[33m)[m produkty i arcydzieła skończone
+* [33mf8824b7[m[33m ([m[1;33mtag: [m[1;33mcheckpoint-admin-arcydziela[m[33m)[m dodajemy przyciski arcydziela
+* [33mfab69dd[m[33m ([m[1;33mtag: [m[1;33mcheckpoint-admin-activity2[m[33m)[m dodajemy aktywność u admina
+* [33ma7eb08a[m[33m ([m[1;33mtag: [m[1;33mcheckpoint-admin-activity[m[33m)[m modyfikacja aktywności użytkownika
+* [33mad03887[m[33m ([m[1;33mtag: [m[1;33mcheckpoint-profil_uzytkownika_koniec[m[33m)[m zakończony profil użytkownika
+* [33mee73168[m[33m ([m[1;33mtag: [m[1;33mcheckpoint-komentarze[m[33m)[m uzupełnione komentarze
+* [33mdb37e76[m[33m ([m[1;33mtag: [m[1;33mcheckpoint-profil[m[33m)[m uzupełniamy profil
+* [33mde8f7bc[m[33m ([m[1;33mtag: [m[1;33mcheckpoint-watercolor-gallery[m[33m)[m feat: products and gallery overhaul (watercolor shop, gallery rating, cart integration, UX improvements)
+* [33mc9145bf[m Fix cart: minus button and remove selected items
+* [33maf107bf[m checkpoint: gallery + badges WIP
+* [33med6b713[m[33m ([m[1;33mtag: [m[1;33mcheckpoint-2025-12-24-21-54[m[33m, [m[1;33mtag: [m[1;33mcheckpoint-2025-09-25-START[m[33m)[m checkpoint cart gallery navigation
+* [33mdb3cfe3[m[33m ([m[1;33mtag: [m[1;33mcheckpoint-2025-09-24-20-24[m[33m, [m[1;33mtag: [m[1;33mcheckpoint-2025-09-24-12-30[m[33m, [m[1;33mtag: [m[1;33mcheckpoint-2025-09-24-11-40[m[33m)[m add tab icons
+* [33m5c8b8f6[m[33m ([m[1;33mtag: [m[1;33mcheckpoint-2025-09-24-10-56[m[33m)[m checkpoint
+* [33m3bed488[m[33m ([m[1;33mtag: [m[1;33mcheckpoint-2025-12-24[m[33m, [m[1;33mtag: [m[1;33mcheckpoint-2025-09-24-10-55[m[33m)[m Checkpoint-24.12
+* [33mf7b0412[m[33m ([m[1;33mtag: [m[1;33mrn-android-build-ok-2025-01-xx[m[33m)[m Initial commit

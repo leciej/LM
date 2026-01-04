@@ -5,22 +5,24 @@ import React, {
   type ReactNode,
 } from 'react';
 
-export type UserRole = 'USER' | 'ADMIN';
+export type UserRole = 'GUEST' | 'USER' | 'ADMIN';
 
 export type User = {
+  id: number;
   name: string;
+  surname: string;
+  login: string;
   email: string;
+  role: UserRole;
 };
 
 type AuthContextType = {
-  isLoggedIn: boolean;
-  role: UserRole | null;
   user: User | null;
+  isLoggedIn: boolean;
+  isAdmin: boolean;
 
-  loginAsGuest: () => void;
-  loginAsAdmin: () => void;
-
-  register: (user: User) => void;
+  login: (loginOrEmail: string, password: string) => Promise<void>;
+  loginAsGuest: () => Promise<void>;
   logout: () => void;
 };
 
@@ -33,61 +35,72 @@ type AuthProviderProps = {
   children: ReactNode;
 };
 
+const API_URL = 'http://localhost:5000/api/users';
+
 export function AuthProvider({
   children,
 }: AuthProviderProps) {
-  const [isLoggedIn, setIsLoggedIn] =
-    useState(false);
-  const [role, setRole] =
-    useState<UserRole | null>(null);
-  const [user, setUser] =
-    useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(
+    null
+  );
 
-  /* ===== LOGIN ===== */
-
-  const loginAsGuest = () => {
-    setUser({
-      name: 'Gość',
-      email: 'guest@demo.pl',
+  /* =========================
+     LOGIN USER / ADMIN
+     ========================= */
+  const login = async (
+    loginOrEmail: string,
+    password: string
+  ) => {
+    const res = await fetch(`${API_URL}/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        loginOrEmail,
+        password,
+      }),
     });
-    setRole('USER');
-    setIsLoggedIn(true);
+
+    if (!res.ok) {
+      throw new Error('Niepoprawny login lub hasło');
+    }
+
+    const data: User = await res.json();
+    setUser(data);
   };
 
-  const loginAsAdmin = () => {
-    setUser({
-      name: 'Admin',
-      email: 'admin@demo.pl',
+  /* =========================
+     LOGIN GUEST (BACKEND)
+     ========================= */
+  const loginAsGuest = async () => {
+    const res = await fetch(`${API_URL}/guest`, {
+      method: 'POST',
     });
-    setRole('ADMIN');
-    setIsLoggedIn(true);
+
+    if (!res.ok) {
+      throw new Error('Nie udało się zalogować jako gość');
+    }
+
+    const data: User = await res.json();
+    setUser(data);
   };
 
-  /* ===== REGISTER ===== */
-
-  const register = (newUser: User) => {
-    setUser(newUser);
-    setRole('USER');
-    setIsLoggedIn(true);
-  };
-
-  /* ===== LOGOUT ===== */
-
+  /* =========================
+     LOGOUT
+     ========================= */
   const logout = () => {
-    setIsLoggedIn(false);
-    setRole(null);
     setUser(null);
   };
 
   return (
     <AuthContext.Provider
       value={{
-        isLoggedIn,
-        role,
         user,
+        isLoggedIn: !!user,
+        isAdmin: user?.role === 'ADMIN',
+        login,
         loginAsGuest,
-        loginAsAdmin,
-        register,
         logout,
       }}
     >

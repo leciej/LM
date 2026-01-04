@@ -21,7 +21,7 @@ const Stack =
   createNativeStackNavigator<RootStackParamList>();
 
 export function AppNavigator() {
-  const { isLoggedIn, role } = useAuth();
+  const { isLoggedIn, isAdmin } = useAuth();
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -43,7 +43,7 @@ export function AppNavigator() {
             component={RegisterScreen}
           />
         </>
-      ) : role === 'ADMIN' ? (
+      ) : isAdmin ? (
         <Stack.Screen
           name="Admin"
           component={AdminTabsNavigator}

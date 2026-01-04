@@ -6,6 +6,7 @@ import {
   Pressable,
   TextInput,
   Animated,
+  Alert,
 } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
 import { useNavigation } from '@react-navigation/native';
@@ -18,11 +19,11 @@ type NavigationProp = NativeStackNavigationProp<
 >;
 
 export function LoginScreen() {
-  const { loginAsGuest, loginAsUser, loginAsAdmin } = useAuth();
+  const { loginAsGuest, login } = useAuth();
   const navigation = useNavigation<NavigationProp>();
 
   const [mode, setMode] = useState<'user' | 'admin' | null>(null);
-  const [login, setLogin] = useState('');
+  const [loginValue, setLoginValue] = useState('');
   const [password, setPassword] = useState('');
 
   const animUser = useRef(new Animated.Value(0)).current;
@@ -56,9 +57,15 @@ export function LoginScreen() {
     overflow: 'hidden',
   });
 
-  const handleLogin = () => {
-    if (mode === 'user') loginAsUser({ login, password });
-    if (mode === 'admin') loginAsAdmin({ login, password });
+  const handleLogin = async () => {
+    try {
+      await login(loginValue, password);
+    } catch {
+      Alert.alert(
+        'Błąd logowania',
+        'Niepoprawny login lub hasło'
+      );
+    }
   };
 
   return (
@@ -69,7 +76,9 @@ export function LoginScreen() {
         style={[styles.button, styles.guestButton]}
         onPress={loginAsGuest}
       >
-        <Text style={styles.buttonText}>Zaloguj jako gość</Text>
+        <Text style={styles.buttonText}>
+          Zaloguj jako gość
+        </Text>
       </Pressable>
 
       {/* USER */}
@@ -77,15 +86,17 @@ export function LoginScreen() {
         style={[styles.button, styles.userButton]}
         onPress={() => toggle('user', animUser)}
       >
-        <Text style={styles.buttonText}>Zaloguj jako użytkownik</Text>
+        <Text style={styles.buttonText}>
+          Zaloguj jako użytkownik
+        </Text>
       </Pressable>
 
       <Animated.View style={formStyle(animUser)}>
         <View style={styles.form}>
           <TextInput
-            placeholder="Login"
-            value={login}
-            onChangeText={setLogin}
+            placeholder="Login lub email"
+            value={loginValue}
+            onChangeText={setLoginValue}
             style={styles.input}
             autoCapitalize="none"
           />
@@ -110,15 +121,17 @@ export function LoginScreen() {
         style={[styles.button, styles.adminButton]}
         onPress={() => toggle('admin', animAdmin)}
       >
-        <Text style={styles.buttonText}>Zaloguj jako admin</Text>
+        <Text style={styles.buttonText}>
+          Zaloguj jako admin
+        </Text>
       </Pressable>
 
       <Animated.View style={formStyle(animAdmin)}>
         <View style={styles.form}>
           <TextInput
-            placeholder="Login"
-            value={login}
-            onChangeText={setLogin}
+            placeholder="Login lub email"
+            value={loginValue}
+            onChangeText={setLoginValue}
             style={styles.input}
             autoCapitalize="none"
           />
@@ -142,7 +155,9 @@ export function LoginScreen() {
         style={[styles.button, styles.registerButton]}
         onPress={() => navigation.navigate('Register')}
       >
-        <Text style={styles.buttonText}>Zarejestruj się</Text>
+        <Text style={styles.buttonText}>
+          Zarejestruj się
+        </Text>
       </Pressable>
     </View>
   );
