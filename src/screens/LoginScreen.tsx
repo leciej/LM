@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Pressable,
+  TextInput,
+  Animated,
 } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
 import { useNavigation } from '@react-navigation/native';
@@ -16,40 +18,131 @@ type NavigationProp = NativeStackNavigationProp<
 >;
 
 export function LoginScreen() {
-  const { loginAsGuest, loginAsAdmin } = useAuth();
+  const { loginAsGuest, loginAsUser, loginAsAdmin } = useAuth();
   const navigation = useNavigation<NavigationProp>();
+
+  const [mode, setMode] = useState<'user' | 'admin' | null>(null);
+  const [login, setLogin] = useState('');
+  const [password, setPassword] = useState('');
+
+  const animUser = useRef(new Animated.Value(0)).current;
+  const animAdmin = useRef(new Animated.Value(0)).current;
+
+  const toggle = (target: 'user' | 'admin', anim: Animated.Value) => {
+    const isOpen = mode === target;
+
+    setMode(isOpen ? null : target);
+
+    Animated.timing(anim, {
+      toValue: isOpen ? 0 : 1,
+      duration: 220,
+      useNativeDriver: false,
+    }).start();
+
+    const other = target === 'user' ? animAdmin : animUser;
+    Animated.timing(other, {
+      toValue: 0,
+      duration: 180,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const formStyle = (anim: Animated.Value) => ({
+    height: anim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, 170],
+    }),
+    opacity: anim,
+    overflow: 'hidden',
+  });
+
+  const handleLogin = () => {
+    if (mode === 'user') loginAsUser({ login, password });
+    if (mode === 'admin') loginAsAdmin({ login, password });
+  };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>
-        Guten Tag twoja mać!
-      </Text>
+      <Text style={styles.title}>Guten Tag twoja mać!</Text>
 
       <Pressable
-        style={[styles.button, styles.userButton]}
+        style={[styles.button, styles.guestButton]}
         onPress={loginAsGuest}
       >
-        <Text style={styles.buttonText}>
-          Zaloguj jako użytkownik
-        </Text>
+        <Text style={styles.buttonText}>Zaloguj jako gość</Text>
       </Pressable>
 
+      {/* USER */}
+      <Pressable
+        style={[styles.button, styles.userButton]}
+        onPress={() => toggle('user', animUser)}
+      >
+        <Text style={styles.buttonText}>Zaloguj jako użytkownik</Text>
+      </Pressable>
+
+      <Animated.View style={formStyle(animUser)}>
+        <View style={styles.form}>
+          <TextInput
+            placeholder="Login"
+            value={login}
+            onChangeText={setLogin}
+            style={styles.input}
+            autoCapitalize="none"
+          />
+          <TextInput
+            placeholder="Hasło"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            style={styles.input}
+          />
+          <Pressable
+            style={[styles.button, styles.submitButton]}
+            onPress={handleLogin}
+          >
+            <Text style={styles.buttonText}>Zaloguj</Text>
+          </Pressable>
+        </View>
+      </Animated.View>
+
+      {/* ADMIN */}
       <Pressable
         style={[styles.button, styles.adminButton]}
-        onPress={loginAsAdmin}
+        onPress={() => toggle('admin', animAdmin)}
       >
-        <Text style={styles.buttonText}>
-          Zaloguj jako admin
-        </Text>
+        <Text style={styles.buttonText}>Zaloguj jako admin</Text>
       </Pressable>
+
+      <Animated.View style={formStyle(animAdmin)}>
+        <View style={styles.form}>
+          <TextInput
+            placeholder="Login"
+            value={login}
+            onChangeText={setLogin}
+            style={styles.input}
+            autoCapitalize="none"
+          />
+          <TextInput
+            placeholder="Hasło"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            style={styles.input}
+          />
+          <Pressable
+            style={[styles.button, styles.submitButton]}
+            onPress={handleLogin}
+          >
+            <Text style={styles.buttonText}>Zaloguj</Text>
+          </Pressable>
+        </View>
+      </Animated.View>
 
       <Pressable
         style={[styles.button, styles.registerButton]}
         onPress={() => navigation.navigate('Register')}
       >
-        <Text style={styles.registerText}>
-          Zarejestruj się
-        </Text>
+        <Text style={styles.buttonText}>Zarejestruj się</Text>
       </Pressable>
     </View>
   );
@@ -58,19 +151,33 @@ export function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
     padding: 24,
+    justifyContent: 'center',
   },
   title: {
     fontSize: 24,
     fontWeight: '700',
-    marginBottom: 32,
+    marginBottom: 24,
     textAlign: 'center',
   },
   button: {
     padding: 14,
     borderRadius: 6,
-    marginBottom: 12,
+    marginBottom: 8,
+    alignItems: 'center',
+  },
+  form: {
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 10,
+    borderRadius: 6,
+    marginBottom: 8,
+  },
+  guestButton: {
+    backgroundColor: '#00897b',
   },
   userButton: {
     backgroundColor: '#1976d2',
@@ -78,19 +185,15 @@ const styles = StyleSheet.create({
   adminButton: {
     backgroundColor: '#455a64',
   },
+  submitButton: {
+    backgroundColor: '#1976d2',
+  },
   registerButton: {
     backgroundColor: '#2e7d32',
-    marginTop: 24,
+    marginTop: 14,
   },
   buttonText: {
     color: '#fff',
-    textAlign: 'center',
-    fontWeight: '700',
-    fontSize: 16,
-  },
-  registerText: {
-    color: '#fff',
-    textAlign: 'center',
     fontWeight: '700',
     fontSize: 16,
   },

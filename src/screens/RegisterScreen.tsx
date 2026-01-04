@@ -9,10 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
-
-/* =========================
-   TYP POD BACKEND
-   ========================= */
+import { useNavigation } from '@react-navigation/native';
 
 type RegisterPayload = {
   name: string;
@@ -22,6 +19,7 @@ type RegisterPayload = {
 
 export function RegisterScreen() {
   const { register } = useAuth();
+  const navigation = useNavigation();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -36,10 +34,6 @@ export function RegisterScreen() {
   const [error, setError] = useState<string | null>(
     null
   );
-
-  /* =========================
-     WALIDACJA
-     ========================= */
 
   const validatePassword = (value: string) => {
     if (value.length < 8)
@@ -77,10 +71,6 @@ export function RegisterScreen() {
     return true;
   };
 
-  /* =========================
-     SUBMIT (BACKEND-READY)
-     ========================= */
-
   const handleSubmit = async () => {
     if (!validate()) return;
 
@@ -93,17 +83,10 @@ export function RegisterScreen() {
     try {
       setLoading(true);
 
-      /**
-       * 🔜 TU DOCZELOWO:
-       * await api.register(payload)
-       */
-
-      // mock backend
       await new Promise<void>(resolve =>
         setTimeout(resolve, 600)
       );
 
-      // ✅ AUTO-LOGIN PO REJESTRACJI
       register({
         name: payload.name,
         email: payload.email,
@@ -112,9 +95,8 @@ export function RegisterScreen() {
       Alert.alert(
         'Rejestracja zakończona',
         'Witaj w Świecie akwareli 🎨',
-        [{ text: 'Przejdź do sklepu' }]
+        [{ text: 'OK' }]
       );
-      // ❗ nawigacja zrobi się sama przez AppNavigator
     } catch {
       Alert.alert(
         'Błąd rejestracji',
@@ -145,7 +127,6 @@ export function RegisterScreen() {
         style={styles.input}
       />
 
-      {/* HASŁO */}
       <View style={styles.passwordRow}>
         <TextInput
           placeholder="Hasło"
@@ -165,7 +146,6 @@ export function RegisterScreen() {
         </Pressable>
       </View>
 
-      {/* POWTÓRZ HASŁO */}
       <View style={styles.passwordRow}>
         <TextInput
           placeholder="Powtórz hasło"
@@ -207,13 +187,18 @@ export function RegisterScreen() {
           </Text>
         )}
       </Pressable>
+
+      <Pressable
+        style={[styles.button, styles.backButton]}
+        onPress={() => navigation.goBack()}
+      >
+        <Text style={styles.buttonText}>
+          Wróć
+        </Text>
+      </Pressable>
     </View>
   );
 }
-
-/* =========================
-   STYLES
-   ========================= */
 
 const styles = StyleSheet.create({
   container: {
@@ -262,6 +247,9 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginTop: 12,
     alignItems: 'center',
+  },
+  backButton: {
+    backgroundColor: '#455a64',
   },
   buttonText: {
     color: '#fff',
