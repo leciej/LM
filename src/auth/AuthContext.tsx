@@ -5,9 +5,14 @@ import React, {
   type ReactNode,
 } from 'react';
 
+/* =========================
+   TYPY
+   ========================= */
+
 export type UserRole = 'USER' | 'ADMIN';
 
 export type User = {
+  id: number;
   name: string;
   email: string;
 };
@@ -21,8 +26,13 @@ type AuthContextType = {
   loginAsAdmin: () => void;
 
   register: (user: User) => void;
+  login: (user: User) => void;
   logout: () => void;
 };
+
+/* =========================
+   CONTEXT
+   ========================= */
 
 const AuthContext =
   createContext<AuthContextType | undefined>(
@@ -32,6 +42,10 @@ const AuthContext =
 type AuthProviderProps = {
   children: ReactNode;
 };
+
+/* =========================
+   PROVIDER
+   ========================= */
 
 export function AuthProvider({
   children,
@@ -43,10 +57,11 @@ export function AuthProvider({
   const [user, setUser] =
     useState<User | null>(null);
 
-  /* ===== LOGIN ===== */
+  /* ===== LOGIN (MOCKI) ===== */
 
   const loginAsGuest = () => {
     setUser({
+      id: 1,
       name: 'Gość',
       email: 'guest@demo.pl',
     });
@@ -56,10 +71,19 @@ export function AuthProvider({
 
   const loginAsAdmin = () => {
     setUser({
+      id: 999,
       name: 'Admin',
       email: 'admin@demo.pl',
     });
     setRole('ADMIN');
+    setIsLoggedIn(true);
+  };
+
+  /* ===== LOGIN (BACKEND) ===== */
+
+  const login = (loggedUser: User) => {
+    setUser(loggedUser);
+    setRole('USER');
     setIsLoggedIn(true);
   };
 
@@ -88,6 +112,7 @@ export function AuthProvider({
         loginAsGuest,
         loginAsAdmin,
         register,
+        login,
         logout,
       }}
     >
@@ -95,6 +120,10 @@ export function AuthProvider({
     </AuthContext.Provider>
   );
 }
+
+/* =========================
+   HOOK
+   ========================= */
 
 export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);

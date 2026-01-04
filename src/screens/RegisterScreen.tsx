@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
+import { UsersApi } from '@/api/users/usersApi';
 
 /* =========================
    TYP POD BACKEND
@@ -16,6 +17,8 @@ import { useAuth } from '../auth/AuthContext';
 
 type RegisterPayload = {
   name: string;
+  surname: string;
+  login: string;
   email: string;
   password: string;
 };
@@ -24,6 +27,8 @@ export function RegisterScreen() {
   const { register } = useAuth();
 
   const [name, setName] = useState('');
+  const [surname, setSurname] = useState('');
+  const [login, setLogin] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] =
@@ -57,6 +62,16 @@ export function RegisterScreen() {
       return false;
     }
 
+    if (!surname.trim()) {
+      setError('Podaj nazwisko');
+      return false;
+    }
+
+    if (!login.trim()) {
+      setError('Podaj login');
+      return false;
+    }
+
     if (!email.includes('@')) {
       setError('Niepoprawny email');
       return false;
@@ -78,7 +93,7 @@ export function RegisterScreen() {
   };
 
   /* =========================
-     SUBMIT (BACKEND-READY)
+     SUBMIT → BACKEND (SQL)
      ========================= */
 
   const handleSubmit = async () => {
@@ -86,6 +101,8 @@ export function RegisterScreen() {
 
     const payload: RegisterPayload = {
       name: name.trim(),
+      surname: surname.trim(),
+      login: login.trim(),
       email: email.trim().toLowerCase(),
       password,
     };
@@ -93,20 +110,13 @@ export function RegisterScreen() {
     try {
       setLoading(true);
 
-      /**
-       * 🔜 TU DOCZELOWO:
-       * await api.register(payload)
-       */
-
-      // mock backend
-      await new Promise<void>(resolve =>
-        setTimeout(resolve, 600)
-      );
+      const user = await UsersApi.register(payload);
 
       // ✅ AUTO-LOGIN PO REJESTRACJI
       register({
-        name: payload.name,
-        email: payload.email,
+        id: user.id,
+        name: user.name,
+        email: user.email,
       });
 
       Alert.alert(
@@ -114,11 +124,11 @@ export function RegisterScreen() {
         'Witaj w Świecie akwareli 🎨',
         [{ text: 'Przejdź do sklepu' }]
       );
-      // ❗ nawigacja zrobi się sama przez AppNavigator
-    } catch {
+    } catch (e: any) {
       Alert.alert(
         'Błąd rejestracji',
-        'Spróbuj ponownie'
+        e?.response?.data ??
+          'Nie udało się zarejestrować'
       );
     } finally {
       setLoading(false);
@@ -134,6 +144,24 @@ export function RegisterScreen() {
         value={name}
         onChangeText={setName}
         style={styles.input}
+        importantForAutofill="no"
+      />
+
+      <TextInput
+        placeholder="Nazwisko"
+        value={surname}
+        onChangeText={setSurname}
+        style={styles.input}
+        importantForAutofill="no"
+      />
+
+      <TextInput
+        placeholder="Login"
+        value={login}
+        onChangeText={setLogin}
+        autoCapitalize="none"
+        style={styles.input}
+        importantForAutofill="no"
       />
 
       <TextInput
@@ -143,6 +171,7 @@ export function RegisterScreen() {
         autoCapitalize="none"
         keyboardType="email-address"
         style={styles.input}
+        importantForAutofill="no"
       />
 
       {/* HASŁO */}
@@ -153,6 +182,7 @@ export function RegisterScreen() {
           onChangeText={setPassword}
           secureTextEntry={!showPassword}
           style={styles.passwordInput}
+          importantForAutofill="no"
         />
         <Pressable
           onPress={() =>
@@ -173,6 +203,7 @@ export function RegisterScreen() {
           onChangeText={setConfirmPassword}
           secureTextEntry={!showPassword}
           style={styles.passwordInput}
+          importantForAutofill="no"
         />
         <Pressable
           onPress={() =>
