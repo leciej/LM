@@ -1,9 +1,11 @@
 import React, {
   createContext,
   useContext,
+  useEffect,
   useState,
   type ReactNode,
 } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { http } from '../api/http';
 
 export type UserRole = 'GUEST' | 'USER' | 'ADMIN';
@@ -24,7 +26,7 @@ type AuthContextType = {
 
   login: (loginOrEmail: string, password: string) => Promise<void>;
   loginAsGuest: () => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 };
 
 const AuthContext =
@@ -34,10 +36,29 @@ type AuthProviderProps = {
   children: ReactNode;
 };
 
-export function AuthProvider({
-  children,
-}: AuthProviderProps) {
+const STORAGE_KEY = 'auth_user';
+
+export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
+  const [initialized, setInitialized] = useState(false);
+
+  /* =========================
+     RESTORE SESSION
+     ========================= */
+  useEffect(() => {
+    const restoreUser = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          setUser(JSON.parse(stored));
+        }
+      } finally {
+        setInitialized(true);
+      }
+    };
+
+    restoreUser();
+  }, []);
 
   /* =========================
      LOGIN USER / ADMIN
@@ -48,32 +69,41 @@ export function AuthProvider({
   ) => {
     const res = await http.post<User>(
       '/users/login',
-      {
-        loginOrEmail,
-        password,
-      }
+      { loginOrEmail, password }
     );
 
     setUser(res.data);
+    await AsyncStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(res.data)
+    );
   };
 
   /* =========================
-     LOGIN GUEST (BACKEND)
+     LOGIN GUEST
      ========================= */
   const loginAsGuest = async () => {
-    const res = await http.post<User>(
-      '/users/guest'
-    );
+    const res = await http.post<User>('/users/guest');
 
     setUser(res.data);
+    await AsyncStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(res.data)
+    );
   };
 
   /* =========================
      LOGOUT
      ========================= */
-  const logout = () => {
+  const logout = async () => {
     setUser(null);
+    await AsyncStorage.removeItem(STORAGE_KEY);
   };
+
+  // ⛔ nie renderuj appki zanim nie odtworzysz sesji
+  if (!initialized) {
+    return null;
+  }
 
   return (
     <AuthContext.Provider

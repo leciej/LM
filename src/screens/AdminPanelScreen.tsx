@@ -9,9 +9,9 @@ import {
 import { useAuth } from '../auth/AuthContext';
 
 export function AdminPanelScreen({ navigation }: any) {
-  const { role } = useAuth();
+  const { isAdmin } = useAuth();
 
-  if (role !== 'ADMIN') {
+  if (!isAdmin) {
     return (
       <View style={styles.center}>
         <Text style={styles.denied}>Brak dostępu</Text>
