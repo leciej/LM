@@ -14,17 +14,38 @@ const Stack =
 
 export function AdminProductsStackNavigator() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: true,
+
+        // ✨ GŁÓWNA ANIMACJA
+        animation: 'slide_from_right',
+        animationDuration: 220,
+
+        // 📱 gest cofania (iOS / Android)
+        gestureEnabled: true,
+
+        // 🧠 lepsze „czucie” przejścia
+        gestureDirection: 'horizontal',
+      }}
+    >
       <Stack.Screen
         name="Products"
         component={AdminProductsScreen}
-        options={{ title: 'Produkty' }}
+        options={{
+          title: 'Produkty',
+        }}
       />
 
       <Stack.Screen
         name="AddProduct"
         component={AdminAddProductScreen}
-        options={{ title: 'Dodaj / edytuj produkt' }}
+        options={{
+          title: 'Dodaj / edytuj produkt',
+
+          // ➕ trochę „modal feel”
+          animation: 'slide_from_bottom',
+        }}
       />
     </Stack.Navigator>
   );

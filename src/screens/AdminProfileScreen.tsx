@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   View,
   Text,
   Button,
   StyleSheet,
   Pressable,
+  Animated,
 } from 'react-native';
 import { useSyncExternalStore } from 'react';
 import { useAuth } from '../auth/AuthContext';
@@ -48,20 +49,65 @@ function timeAgo(timestamp: number) {
 }
 
 /* =========================
+   ANIMATED ACTION BUTTON
+   ========================= */
+
+function AnimatedActionButton({
+  label,
+  onPress,
+  variant = 'primary',
+}: {
+  label: string;
+  onPress: () => void;
+  variant?: 'primary' | 'secondary';
+}) {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const pressIn = () => {
+    Animated.spring(scale, {
+      toValue: 0.96,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const pressOut = () => {
+    Animated.spring(scale, {
+      toValue: 1,
+      friction: 4,
+      useNativeDriver: true,
+    }).start(() => {
+      onPress(); // 🚀 nawigacja po animacji
+    });
+  };
+
+  return (
+    <Pressable onPressIn={pressIn} onPressOut={pressOut}>
+      <Animated.View
+        style={[
+          styles.actionButton,
+          variant === 'secondary' && styles.actionButtonSecondary,
+          { transform: [{ scale }] },
+        ]}
+      >
+        <Text style={styles.actionText}>{label}</Text>
+      </Animated.View>
+    </Pressable>
+  );
+}
+
+/* =========================
    SCREEN
    ========================= */
 
 export function AdminProfileScreen({ navigation }: any) {
-  // ✅ HOOKI ZAWSZE NA GÓRZE
-  const { logout, user, role } = useAuth();
+  const { logout, user, isAdmin } = useAuth();
 
   const activities = useSyncExternalStore(
     subscribeActivity,
     getActivities
   ).filter(a => isAdminType(a.type));
 
-  // ✅ GUARD DOPIERO PO HOOKACH
-  if (role !== 'ADMIN') {
+  if (!isAdmin || !user) {
     return (
       <View style={styles.center}>
         <Text style={styles.muted}>Brak dostępu</Text>
@@ -75,15 +121,12 @@ export function AdminProfileScreen({ navigation }: any) {
       <View style={styles.header}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
-            {user?.name?.[0] ?? 'A'}
+            {user.name?.[0] ?? 'A'}
           </Text>
         </View>
 
-        <Text style={styles.title}>
-          {user?.name ?? 'Administrator'}
-        </Text>
-
-        <Text style={styles.subtitle}>{user?.email}</Text>
+        <Text style={styles.title}>{user.name}</Text>
+        <Text style={styles.subtitle}>{user.email}</Text>
 
         <View style={styles.roleBadge}>
           <Text style={styles.roleText}>🛠 Administrator</Text>
@@ -92,7 +135,7 @@ export function AdminProfileScreen({ navigation }: any) {
 
       {/* DASHBOARD */}
       <View style={styles.dashboard}>
-        {/* OSTATNIA AKTYWNOŚĆ */}
+        {/* ACTIVITY */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>
             Ostatnia aktywność
@@ -112,36 +155,25 @@ export function AdminProfileScreen({ navigation }: any) {
           )}
         </View>
 
-        {/* SZYBKIE AKCJE */}
+        {/* QUICK ACTIONS */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Szybkie akcje</Text>
 
-          <Pressable
-            style={styles.actionButton}
-            onPress={() =>
-              navigation.navigate('AdminProducts')
-            }
-          >
-            <Text style={styles.actionText}>📦 Produkty</Text>
-          </Pressable>
+          <AnimatedActionButton
+            label="📦 Produkty"
+            onPress={() => navigation.navigate('AdminProducts')}
+          />
 
-          <Pressable
-            style={styles.actionButton}
-            onPress={() =>
-              navigation.navigate('AdminGallery')
-            }
-          >
-            <Text style={styles.actionText}>🖼 Arcydzieła</Text>
-          </Pressable>
+          <AnimatedActionButton
+            label="🖼 Arcydzieła"
+            onPress={() => navigation.navigate('AdminGallery')}
+          />
 
-          <Pressable
-            style={styles.actionButtonSecondary}
-            onPress={() =>
-              navigation.navigate('AdminStats')
-            }
-          >
-            <Text style={styles.actionText}>📊 Statystyki</Text>
-          </Pressable>
+          <AnimatedActionButton
+            label="📊 Statystyki"
+            variant="secondary"
+            onPress={() => navigation.navigate('AdminStats')}
+          />
         </View>
       </View>
 
@@ -236,14 +268,12 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     backgroundColor: '#2563EB',
-    padding: 10,
-    borderRadius: 8,
+    padding: 12,
+    borderRadius: 10,
     marginBottom: 8,
   },
   actionButtonSecondary: {
     backgroundColor: '#E5E7EB',
-    padding: 10,
-    borderRadius: 8,
   },
   actionText: {
     color: '#111827',
