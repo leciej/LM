@@ -20,6 +20,7 @@ import {
   CommentsApi,
   CommentDto,
 } from "@/api/comments/commentsApi";
+import { useAuth } from "@/auth/AuthContext";
 
 type Props = NativeStackScreenProps<
   ProductsStackParamList,
@@ -51,6 +52,7 @@ function formatRelativeDate(dateString: string): string {
 
 export function ProductDetailsScreen({ route, navigation }: Props) {
   const { product: dto, source } = route.params;
+  const { user } = useAuth(); // ⬅️ BIERZEMY ZALOGOWANEGO USERA
 
   const [commentText, setCommentText] = useState("");
   const [comments, setComments] = useState<CommentDto[]>([]);
@@ -102,17 +104,16 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
   };
 
   /* =========================
-     ADD COMMENT (TEMPORARY)
+     ADD COMMENT (POPRAWIONE)
      ========================= */
 
   const handleAddComment = async () => {
-    if (!commentText.trim()) return;
+    if (!commentText.trim() || !user) return;
 
     try {
       const newComment = await CommentsApi.create(dto.id, {
-        clientId: 1, // ⬅️ TEMP: Jan Kowalski z seed data
-        authorName: "Gość",
-        text: commentText.trim(),
+        userId: user.id,          // ✅ PRAWDZIWY USER
+        text: commentText.trim(), // ✅ TYLKO TREŚĆ
       });
 
       setComments(prev => [newComment, ...prev]);
@@ -155,7 +156,6 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
         onPress={handleAddToCart}
       />
 
-      {/* 🔢 LICZNIK KOMENTARZY */}
       <Text style={styles.sectionTitle}>
         Komentarze ({comments.length})
       </Text>
@@ -192,6 +192,7 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
       <Button
         title="Dodaj komentarz"
         onPress={handleAddComment}
+        disabled={!user} // ⬅️ tylko zalogowani
       />
     </ScrollView>
   );

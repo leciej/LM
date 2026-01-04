@@ -12,8 +12,7 @@ export type CommentDto = {
 };
 
 export type CreateCommentRequestDto = {
-  clientId: number;
-  authorName: string;
+  userId: number;
   text: string;
 };
 
