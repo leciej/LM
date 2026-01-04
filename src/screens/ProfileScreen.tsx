@@ -34,23 +34,20 @@ import {
 
 type Role = 'USER' | 'ADMIN';
 
-const ROLE_META: Record<Role, { label: string; color: string; bg: string }> = {
+const ROLE_META: Record<Role, { label: string; color: string }> = {
   USER: {
     label: '👤 Użytkownik',
-    color: '#2563EB',
-    bg: '#DBEAFE',
+    color: '#1976d2',
   },
   ADMIN: {
     label: '🛠 Administrator',
     color: '#111827',
-    bg: '#E5E7EB',
   },
 };
 
 const FALLBACK_META = {
   label: '—',
   color: '#6B7280',
-  bg: '#F3F4F6',
 };
 
 const roleMeta = (role: Role | null) =>
@@ -141,9 +138,9 @@ export function ProfileScreen() {
     <View style={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
-        <View style={[styles.avatar, { backgroundColor: meta.bg }]}>
-          <Text style={[styles.avatarText, { color: meta.color }]}>
-            {user?.name?.[0] ?? '👤'}
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>
+            {user?.name?.[0]?.toUpperCase() ?? '👤'}
           </Text>
         </View>
 
@@ -153,7 +150,7 @@ export function ProfileScreen() {
 
         <Text style={styles.subtitle}>{user?.email}</Text>
 
-        <View style={[styles.roleBadge, { backgroundColor: meta.bg }]}>
+        <View style={styles.roleBadge}>
           <Text style={[styles.roleText, { color: meta.color }]}>
             {meta.label}
           </Text>
@@ -162,7 +159,6 @@ export function ProfileScreen() {
 
       {/* DASHBOARD */}
       <View style={styles.dashboard}>
-        {/* ACTIVITY */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Ostatnia aktywność</Text>
 
@@ -178,7 +174,6 @@ export function ProfileScreen() {
           )}
         </View>
 
-        {/* STATS */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>
             {isAdmin ? 'Statystyki platformy' : 'Twoje statystyki'}
@@ -221,10 +216,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
+    backgroundColor: '#1976d2', // 🔵 taki sam jak przycisk logowania
   },
   avatarText: {
     fontSize: 32,
     fontWeight: '800',
+    color: '#ffffff',
   },
   title: {
     fontSize: 22,
@@ -240,6 +237,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 999,
     marginTop: 6,
+    backgroundColor: '#e5e7eb',
   },
   roleText: {
     fontWeight: '700',

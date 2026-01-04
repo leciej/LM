@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
 import { useNavigation } from '@react-navigation/native';
+import { http } from '../api/http';
 
 type RegisterPayload = {
   name: string;
@@ -85,22 +86,10 @@ export function RegisterScreen() {
     try {
       setLoading(true);
 
-      const res = await fetch(
-        'http://localhost:5000/api/users/register',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+      // ✅ REJESTRACJA PRZEZ AXIOS (TEN SAM BACKEND CO LOGIN)
+      await http.post('/users/register', payload);
 
-      if (!res.ok) {
-        throw new Error();
-      }
-
-      // auto-login po rejestracji
+      // ✅ AUTO-LOGIN
       await login(payload.login, password);
 
       Alert.alert(
@@ -108,10 +97,11 @@ export function RegisterScreen() {
         'Witaj w Świecie akwareli 🎨',
         [{ text: 'OK' }]
       );
-    } catch {
+    } catch (err: any) {
       Alert.alert(
         'Błąd rejestracji',
-        'Spróbuj ponownie'
+        err?.response?.data ||
+          'Nie udało się zarejestrować'
       );
     } finally {
       setLoading(false);

@@ -4,6 +4,7 @@ import React, {
   useState,
   type ReactNode,
 } from 'react';
+import { http } from '../api/http';
 
 export type UserRole = 'GUEST' | 'USER' | 'ADMIN';
 
@@ -27,22 +28,16 @@ type AuthContextType = {
 };
 
 const AuthContext =
-  createContext<AuthContextType | undefined>(
-    undefined
-  );
+  createContext<AuthContextType | undefined>(undefined);
 
 type AuthProviderProps = {
   children: ReactNode;
 };
 
-const API_URL = 'http://localhost:5000/api/users';
-
 export function AuthProvider({
   children,
 }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(
-    null
-  );
+  const [user, setUser] = useState<User | null>(null);
 
   /* =========================
      LOGIN USER / ADMIN
@@ -51,39 +46,26 @@ export function AuthProvider({
     loginOrEmail: string,
     password: string
   ) => {
-    const res = await fetch(`${API_URL}/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    const res = await http.post<User>(
+      '/users/login',
+      {
         loginOrEmail,
         password,
-      }),
-    });
+      }
+    );
 
-    if (!res.ok) {
-      throw new Error('Niepoprawny login lub hasło');
-    }
-
-    const data: User = await res.json();
-    setUser(data);
+    setUser(res.data);
   };
 
   /* =========================
      LOGIN GUEST (BACKEND)
      ========================= */
   const loginAsGuest = async () => {
-    const res = await fetch(`${API_URL}/guest`, {
-      method: 'POST',
-    });
+    const res = await http.post<User>(
+      '/users/guest'
+    );
 
-    if (!res.ok) {
-      throw new Error('Nie udało się zalogować jako gość');
-    }
-
-    const data: User = await res.json();
-    setUser(data);
+    setUser(res.data);
   };
 
   /* =========================
