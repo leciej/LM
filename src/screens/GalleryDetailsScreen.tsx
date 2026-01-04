@@ -31,7 +31,7 @@ type Props = NativeStackScreenProps<
 >;
 
 /* =========================
-   RANDOM (UI ONLY)
+   FAKE VOTES (UI ONLY)
    ========================= */
 
 const getRandomVotes = () =>
@@ -64,8 +64,9 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
   const [previewRating, setPreviewRating] =
     useState<number | null>(null);
 
-  const randomVotesRef = useRef(getRandomVotes());
-  const randomRatingValueRef = useRef(getRandomRatingValue());
+  // fake votes stałe na sesję
+  const fakeVotesRef = useRef(getRandomVotes());
+  const fakeValueRef = useRef(getRandomRatingValue());
 
   const scales = useRef(
     Array.from({ length: 5 }, () => new Animated.Value(1))
@@ -80,7 +81,7 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
 
   const loadRatings = useCallback(async () => {
     const res =
-      await GalleryRatingsApi.getByGalleryItemId(galleryId);
+      await GalleryRatingsApi.getByGalleryItemId(galleryId, 1); // userId = 1 (jak w Swaggerze)
 
     setAverage(res.average);
     setVotes(res.votes);
@@ -123,7 +124,7 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
 
     try {
       await GalleryRatingsApi.create(galleryId, {
-        clientId: 1,
+        userId: 1, // NA RAZIE NA SZTYWNO
         value,
       });
 
@@ -160,17 +161,17 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
   };
 
   /* =========================
-     WIZUALNA MATEMATYKA
+     ŚREDNIA Z FAKE VOTES
      ========================= */
 
-  const fakeVotes = randomVotesRef.current;
-  const fakeValue = randomRatingValueRef.current;
+  const fakeVotes = fakeVotesRef.current;
+  const fakeValue = fakeValueRef.current;
 
   const realVotes = votes;
-  const totalVotes = fakeVotes + realVotes;
-
   const realSum = average * realVotes;
+
   const fakeSum = fakeVotes * fakeValue;
+  const totalVotes = realVotes + fakeVotes;
 
   const displayedAverage =
     totalVotes > 0
@@ -180,7 +181,7 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
   const displayedVotes = totalVotes;
 
   /* =========================
-     GWIAZDKI ŚREDNIEJ (½)
+     GWIAZDKI
      ========================= */
 
   const fullStars = Math.floor(displayedAverage);
@@ -210,8 +211,14 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
   );
 
   const renderMyStars = () =>
-    [0, 1, 2, 3, 4].map(i => {
-      const star = (
+    [0, 1, 2, 3, 4].map(i => (
+      <Pressable
+        key={i}
+        onPressIn={() => setPreviewRating(i + 1)}
+        onPressOut={() => setPreviewRating(null)}
+        onPress={() => commitRating(i + 1)}
+        disabled={myRating !== null}
+      >
         <Animated.Text
           style={[
             styles.star,
@@ -221,20 +228,8 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
         >
           ★
         </Animated.Text>
-      );
-
-      return (
-        <Pressable
-          key={i}
-          onPressIn={() => setPreviewRating(i + 1)}
-          onPressOut={() => setPreviewRating(null)}
-          onPress={() => commitRating(i + 1)}
-          disabled={myRating !== null}
-        >
-          {star}
-        </Pressable>
-      );
-    });
+      </Pressable>
+    ));
 
   /* =========================
      RENDER
@@ -280,7 +275,7 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
 
       {myRating && (
         <Text style={styles.myRatingText}>
-          Dziękujemy za ocenę ⭐
+          Dziękujemy za ocenę ⭐ ({myRating}/5)
         </Text>
       )}
     </ScrollView>

@@ -11,8 +11,8 @@ export type GalleryRatingSummaryDto = {
 };
 
 export type CreateGalleryRatingRequestDto = {
-  clientId: number;
-  value: number; // 1–5
+  userId: number;   // ⬅️ MUSI BYĆ userId (NIE clientId)
+  value: number;    // 1–5
 };
 
 /* =========================
@@ -20,12 +20,16 @@ export type CreateGalleryRatingRequestDto = {
    ========================= */
 
 export const GalleryRatingsApi = {
-  // GET /api/gallery/{galleryItemId}/ratings
+  // GET /api/gallery/{galleryItemId}/ratings?userId=...
   getByGalleryItemId: async (
-    galleryItemId: string
+    galleryItemId: string,
+    userId?: number
   ): Promise<GalleryRatingSummaryDto> => {
     const { data } = await http.get<GalleryRatingSummaryDto>(
-      `/gallery/${galleryItemId}/ratings`
+      `/gallery/${galleryItemId}/ratings`,
+      {
+        params: userId ? { userId } : undefined,
+      }
     );
     return data;
   },
