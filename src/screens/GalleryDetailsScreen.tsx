@@ -1,4 +1,9 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 import {
   View,
   Text,
@@ -14,7 +19,7 @@ import {
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { galleryStore } from "@/features/gallery/store/galleryStore";
-import { addItemToCart } from "@/features/cart/store/cartStore";
+import { CartApi } from "@/api/cart";
 import { useAuth } from "@/auth/AuthContext";
 import { GalleryRatingsApi } from "@/api/galleryRatings/galleryRatingsApi";
 
@@ -31,14 +36,8 @@ type Props = NativeStackScreenProps<
 >;
 
 /* =========================
-   FAKE VOTES (UI ONLY)
+   HELPERS
    ========================= */
-
-const getRandomVotes = () =>
-  Math.floor(Math.random() * 5) + 2; // 2–6
-
-const getRandomRatingValue = () =>
-  Math.floor(Math.random() * 2) + 4; // 4 albo 5
 
 const toast = (msg: string) => {
   if (Platform.OS === "android") {
@@ -46,8 +45,12 @@ const toast = (msg: string) => {
   }
 };
 
+/* =========================
+   COMPONENT
+   ========================= */
+
 export function GalleryDetailsScreen({ route, navigation }: Props) {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, user } = useAuth();
 
   /* =========================
      STATE (BACKEND)
@@ -64,16 +67,14 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
   const [previewRating, setPreviewRating] =
     useState<number | null>(null);
 
-  // fake votes stałe na sesję
-  const fakeVotesRef = useRef(getRandomVotes());
-  const fakeValueRef = useRef(getRandomRatingValue());
-
   const scales = useRef(
     Array.from({ length: 5 }, () => new Animated.Value(1))
   ).current;
 
   const { galleryId } = route.params;
-  const item = galleryStore.items.find(g => g.id === galleryId);
+  const item = galleryStore.items.find(
+    g => g.id === galleryId
+  );
 
   /* =========================
      LOAD RATINGS
@@ -81,12 +82,15 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
 
   const loadRatings = useCallback(async () => {
     const res =
-      await GalleryRatingsApi.getByGalleryItemId(galleryId, 1); // userId = 1 (jak w Swaggerze)
+      await GalleryRatingsApi.getByGalleryItemId(
+        galleryId,
+        user?.id // ⬅️ null dla gościa, OK
+      );
 
     setAverage(res.average);
     setVotes(res.votes);
     setMyRating(res.myRating);
-  }, [galleryId]);
+  }, [galleryId, user?.id]);
 
   useEffect(() => {
     loadRatings().catch(() =>
@@ -120,11 +124,11 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
   };
 
   const commitRating = async (value: number) => {
-    if (myRating !== null) return;
+    if (!isLoggedIn || myRating !== null || !user) return;
 
     try {
       await GalleryRatingsApi.create(galleryId, {
-        userId: 1, // NA RAZIE NA SZTYWNO
+        userId: user.id,
         value,
       });
 
@@ -142,51 +146,33 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
     }
   };
 
-  const handleAddToCart = () => {
+  /* =========================
+     CART → BACKEND
+     ========================= */
+
+  const handleAddToCart = async () => {
     if (!isLoggedIn) return;
 
-    addItemToCart(
-      {
-        id: item.id,
-        name: item.title,
-        imageUrl: item.imageUrl,
-        price: item.price,
-        description: `Arcydzieło: ${item.title}`,
-      },
-      "GALLERY"
-    );
+    try {
+      await CartApi.addItem({
+        productId: item.id,
+        quantity: 1,
+      });
 
-    toast(`Dodano "${item.title}" do koszyka`);
-    navigation.goBack();
+      toast(`Dodano "${item.title}" do koszyka`);
+      navigation.goBack();
+    } catch (err) {
+      console.error("ADD TO CART ERROR", err);
+      toast("Nie udało się dodać do koszyka");
+    }
   };
 
   /* =========================
-     ŚREDNIA Z FAKE VOTES
+     RENDER HELPERS
      ========================= */
 
-  const fakeVotes = fakeVotesRef.current;
-  const fakeValue = fakeValueRef.current;
-
-  const realVotes = votes;
-  const realSum = average * realVotes;
-
-  const fakeSum = fakeVotes * fakeValue;
-  const totalVotes = realVotes + fakeVotes;
-
-  const displayedAverage =
-    totalVotes > 0
-      ? Math.round(((realSum + fakeSum) / totalVotes) * 10) / 10
-      : 0;
-
-  const displayedVotes = totalVotes;
-
-  /* =========================
-     GWIAZDKI
-     ========================= */
-
-  const fullStars = Math.floor(displayedAverage);
-  const hasHalfStar =
-    displayedAverage - fullStars >= 0.5;
+  const fullStars = Math.floor(average);
+  const hasHalfStar = average - fullStars >= 0.5;
   const emptyStars =
     5 - fullStars - (hasHalfStar ? 1 : 0);
 
@@ -195,12 +181,17 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
   const renderAverageStars = () => (
     <>
       {Array.from({ length: fullStars }).map((_, i) => (
-        <Text key={`f-${i}`} style={[styles.star, styles.starActive]}>
+        <Text
+          key={`f-${i}`}
+          style={[styles.star, styles.starActive]}
+        >
           ★
         </Text>
       ))}
       {hasHalfStar && (
-        <Text style={[styles.star, styles.starHalf]}>★</Text>
+        <Text style={[styles.star, styles.starHalf]}>
+          ★
+        </Text>
       )}
       {Array.from({ length: emptyStars }).map((_, i) => (
         <Text key={`e-${i}`} style={styles.star}>
@@ -217,7 +208,7 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
         onPressIn={() => setPreviewRating(i + 1)}
         onPressOut={() => setPreviewRating(null)}
         onPress={() => commitRating(i + 1)}
-        disabled={myRating !== null}
+        disabled={!isLoggedIn || myRating !== null}
       >
         <Animated.Text
           style={[
@@ -237,12 +228,17 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
 
   return (
     <ScrollView style={styles.container}>
-      <Image source={{ uri: item.imageUrl }} style={styles.image} />
+      <Image
+        source={{ uri: item.imageUrl }}
+        style={styles.image}
+      />
 
       <Text style={styles.name}>{item.title}</Text>
       <Text style={styles.author}>{item.artist}</Text>
 
-      <Text style={styles.price}>{item.price.toFixed(2)} zł</Text>
+      <Text style={styles.price}>
+        {item.price.toFixed(2)} zł
+      </Text>
 
       <Button
         title={
@@ -260,7 +256,7 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
           {renderAverageStars()}
         </View>
         <Text style={styles.ratingText}>
-          {displayedAverage} / 5 ({displayedVotes} ocen)
+          {average} / 5 ({votes} ocen)
         </Text>
       </View>
 
@@ -287,7 +283,11 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
    ========================= */
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#fff" },
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: "#fff",
+  },
   image: {
     width: "100%",
     height: 260,
@@ -297,7 +297,11 @@ const styles = StyleSheet.create({
   },
   name: { fontSize: 22, fontWeight: "700" },
   author: { fontSize: 14, color: "#666" },
-  price: { fontSize: 20, fontWeight: "700", color: "#2563EB" },
+  price: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#2563EB",
+  },
   ratingRow: { marginVertical: 16 },
   starsRow: { flexDirection: "row" },
   star: {
@@ -310,7 +314,19 @@ const styles = StyleSheet.create({
     color: "#f5b301",
     opacity: 0.5,
   },
-  ratingText: { marginTop: 4, fontSize: 14, color: "#444" },
-  sectionTitle: { fontSize: 16, fontWeight: "700", marginBottom: 8 },
-  myRatingText: { marginTop: 8, fontSize: 14, color: "#2563EB" },
+  ratingText: {
+    marginTop: 4,
+    fontSize: 14,
+    color: "#444",
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  myRatingText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: "#2563EB",
+  },
 });

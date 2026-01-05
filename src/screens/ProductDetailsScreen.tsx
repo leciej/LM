@@ -14,7 +14,7 @@ import {
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import type { ProductsStackParamList } from "../navigation/TabsNavigator/ProductsStackNavigator";
-import { addItemToCart } from "../features/cart/store/cartStore";
+import { CartApi } from "../api/cart";
 
 import {
   CommentsApi,
@@ -51,8 +51,8 @@ function formatRelativeDate(dateString: string): string {
 }
 
 export function ProductDetailsScreen({ route, navigation }: Props) {
-  const { product: dto, source } = route.params;
-  const { user } = useAuth(); // ⬅️ BIERZEMY ZALOGOWANEGO USERA
+  const { product: dto } = route.params;
+  const { user } = useAuth();
 
   const [commentText, setCommentText] = useState("");
   const [comments, setComments] = useState<CommentDto[]>([]);
@@ -79,32 +79,38 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
   }, [dto.id]);
 
   /* =========================
-     CART
+     CART → BACKEND
      ========================= */
 
-  const handleAddToCart = () => {
-    addItemToCart(
-      {
-        id: dto.id,
-        name: dto.name,
-        price: dto.price,
-        imageUrl: dto.imageUrl,
-      },
-      source
-    );
+  const handleAddToCart = async () => {
+    try {
+      await CartApi.addItem({
+        productId: dto.id,
+        quantity: 1,
+      });
 
-    if (Platform.OS === "android") {
-      ToastAndroid.show(
-        `Dodano "${dto.name}"`,
-        ToastAndroid.SHORT
-      );
+      if (Platform.OS === "android") {
+        ToastAndroid.show(
+          `Dodano "${dto.name}"`,
+          ToastAndroid.SHORT
+        );
+      }
+
+      navigation.goBack();
+    } catch (err) {
+      console.error("ADD TO CART ERROR", err);
+
+      if (Platform.OS === "android") {
+        ToastAndroid.show(
+          "Nie udało się dodać do koszyka",
+          ToastAndroid.SHORT
+        );
+      }
     }
-
-    navigation.goBack();
   };
 
   /* =========================
-     ADD COMMENT (POPRAWIONE)
+     ADD COMMENT
      ========================= */
 
   const handleAddComment = async () => {
@@ -112,8 +118,8 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
 
     try {
       const newComment = await CommentsApi.create(dto.id, {
-        userId: user.id,          // ✅ PRAWDZIWY USER
-        text: commentText.trim(), // ✅ TYLKO TREŚĆ
+        userId: user.id,
+        text: commentText.trim(),
       });
 
       setComments(prev => [newComment, ...prev]);
@@ -192,7 +198,7 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
       <Button
         title="Dodaj komentarz"
         onPress={handleAddComment}
-        disabled={!user} // ⬅️ tylko zalogowani
+        disabled={!user}
       />
     </ScrollView>
   );

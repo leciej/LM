@@ -18,7 +18,7 @@ import { useRoute } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { useProducts } from '../features/products/useProducts';
-import { addItemToCart } from '../features/cart/store/cartStore';
+import { CartApi } from '../api/cart';
 import type { ProductDto } from '../api/products';
 import type { ProductsStackParamList } from '../navigation/TabsNavigator/ProductsStackNavigator';
 
@@ -88,22 +88,28 @@ export function ProductsScreen({ navigation }: Props) {
      HANDLERS
      ========================= */
 
-  const handleAddToCart = (product: ProductDto) => {
-    addItemToCart(
-      {
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        imageUrl: product.imageUrl,
-      },
-      'PRODUCTS'
-    );
+  const handleAddToCart = async (product: ProductDto) => {
+    try {
+      await CartApi.addItem({
+        productId: product.id,
+        quantity: 1,
+      });
 
-    if (Platform.OS === 'android') {
-      ToastAndroid.show(
-        `Dodano "${product.name}"`,
-        ToastAndroid.SHORT
-      );
+      if (Platform.OS === 'android') {
+        ToastAndroid.show(
+          `Dodano "${product.name}"`,
+          ToastAndroid.SHORT
+        );
+      }
+    } catch (err) {
+      console.error('ADD TO CART ERROR', err);
+
+      if (Platform.OS === 'android') {
+        ToastAndroid.show(
+          'Błąd dodawania do koszyka',
+          ToastAndroid.SHORT
+        );
+      }
     }
   };
 
