@@ -19,6 +19,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { useProducts } from '../features/products/useProducts';
 import { CartApi } from '../api/cart';
+import { addItemToCart } from '../features/cart/store/cartStore';
 import type { ProductDto } from '../api/products';
 import type { ProductsStackParamList } from '../navigation/TabsNavigator/ProductsStackNavigator';
 
@@ -90,10 +91,23 @@ export function ProductsScreen({ navigation }: Props) {
 
   const handleAddToCart = async (product: ProductDto) => {
     try {
+      // 1️⃣ BACKEND → zapis do bazy
       await CartApi.addItem({
         productId: product.id,
         quantity: 1,
       });
+
+      // 2️⃣ LOCAL → badge / UI
+      addItemToCart(
+        {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          imageUrl: product.imageUrl,
+          description: product.description,
+        },
+        'PRODUCTS'
+      );
 
       if (Platform.OS === 'android') {
         ToastAndroid.show(

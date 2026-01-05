@@ -15,6 +15,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import type { ProductsStackParamList } from "../navigation/TabsNavigator/ProductsStackNavigator";
 import { CartApi } from "../api/cart";
+import { addItemToCart } from "../features/cart/store/cartStore";
 
 import {
   CommentsApi,
@@ -50,6 +51,10 @@ function formatRelativeDate(dateString: string): string {
   return date.toLocaleDateString("pl-PL");
 }
 
+/* =========================
+   COMPONENT
+   ========================= */
+
 export function ProductDetailsScreen({ route, navigation }: Props) {
   const { product: dto } = route.params;
   const { user } = useAuth();
@@ -79,15 +84,28 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
   }, [dto.id]);
 
   /* =========================
-     CART → BACKEND
+     CART → BACKEND + LOCAL
      ========================= */
 
   const handleAddToCart = async () => {
     try {
+      // 1️⃣ BACKEND – zapis do bazy
       await CartApi.addItem({
         productId: dto.id,
         quantity: 1,
       });
+
+      // 2️⃣ LOCAL – badge / UI
+      addItemToCart(
+        {
+          id: dto.id,
+          name: dto.name,
+          price: dto.price,
+          imageUrl: dto.imageUrl,
+          description: dto.description,
+        },
+        "PRODUCTS"
+      );
 
       if (Platform.OS === "android") {
         ToastAndroid.show(

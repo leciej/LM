@@ -29,7 +29,7 @@ const createCartItemId = () =>
   Math.random().toString(36).slice(2);
 
 /* =========================
-   ADD
+   ADD (LOCAL — NIE USUWAMY)
    ========================= */
 
 export function addItemToCart(
@@ -116,5 +116,33 @@ export function removeItemFromCart(cartItemId: string): void {
 
 export function clearCart(): void {
   cart = [];
+  notify();
+}
+
+/* =========================
+   BACKEND SYNC  ✅ KLUCZOWE
+   ========================= */
+
+export function setCartFromBackend(
+  items: Array<{
+    id: string;
+    name: string;
+    price: number;
+    quantity: number;
+    imageUrl?: string | null;
+    source?: Source | null;
+  }>
+): void {
+  cart = items.map(item => ({
+    id: item.id,
+    name: item.name,
+    price: item.price,
+    quantity: item.quantity,
+    source: item.source ?? 'PRODUCTS',
+    cartItemId: createCartItemId(),
+    image: item.imageUrl ?? undefined,
+    imageUrl: item.imageUrl ?? undefined,
+  })) as CartItem[];
+
   notify();
 }
