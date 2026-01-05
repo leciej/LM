@@ -8,6 +8,8 @@ import {
 export class CartApi {
   /**
    * GET /cart
+   * (na razie backend nie ma GET /api/cart — zostawiamy, żeby nie rozwalić appki;
+   * dodamy endpoint w kolejnym kroku)
    */
   static getCart() {
     return httpRequest<CartDto>({
@@ -17,18 +19,23 @@ export class CartApi {
   }
 
   /**
-   * POST /cart
+   * POST /cart/add  ✅ zgodne z backendem: POST /api/cart/add
    */
   static addItem(payload: AddToCartRequestDto) {
-    return httpRequest<CartDto, AddToCartRequestDto>({
+    return httpRequest<{ orderId: string; itemId: string }, AddToCartRequestDto>({
       method: 'POST',
-      url: '/cart',
-      body: payload,
+      url: '/cart/add',
+      body: {
+        ...payload,
+        // pewniak: backend ma Quantity:int
+        quantity: Number((payload as any).quantity ?? 1),
+      } as AddToCartRequestDto,
     });
   }
 
   /**
    * PUT /cart
+   * (backend jeszcze nie ma — zostawiamy; dodamy później)
    */
   static updateItem(payload: UpdateCartItemRequestDto) {
     return httpRequest<CartDto, UpdateCartItemRequestDto>({
@@ -40,6 +47,7 @@ export class CartApi {
 
   /**
    * DELETE /cart/:productId
+   * (backend jeszcze nie ma — zostawiamy; dodamy później)
    */
   static removeItem(productId: string) {
     return httpRequest<CartDto>({
@@ -50,6 +58,7 @@ export class CartApi {
 
   /**
    * DELETE /cart
+   * (backend jeszcze nie ma — zostawiamy; dodamy później)
    */
   static clear() {
     return httpRequest<void>({
