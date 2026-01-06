@@ -18,9 +18,10 @@ import { useRoute } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { useProducts } from '../features/products/useProducts';
-import { CartApi } from '../api/cart';
 import { addItemToCart } from '../features/cart/store/cartStore';
 import type { ProductDto } from '../api/products';
+
+// ✅ JEDYNA ZMIANA: import ParamList z poprawionego pliku (bez `source`)
 import type { ProductsStackParamList } from '../navigation/TabsNavigator/ProductsStackNavigator';
 
 /* =========================
@@ -47,8 +48,10 @@ export function ProductsScreen({ navigation }: Props) {
   const route = useRoute<any>();
 
   const listRef = useRef<FlatList>(null);
-  const [showScrollTop, setShowScrollTop] = useState(false);
-  const [sort, setSort] = useState<SortOption>('NAME_ASC');
+  const [showScrollTop, setShowScrollTop] =
+    useState(false);
+  const [sort, setSort] =
+    useState<SortOption>('NAME_ASC');
   const [menuOpen, setMenuOpen] = useState(false);
 
   /* =========================
@@ -89,25 +92,11 @@ export function ProductsScreen({ navigation }: Props) {
      HANDLERS
      ========================= */
 
-  const handleAddToCart = async (product: ProductDto) => {
+  const handleAddToCart = async (
+    product: ProductDto
+  ) => {
     try {
-      // 1️⃣ BACKEND → zapis do bazy
-      await CartApi.addItem({
-        productId: product.id,
-        quantity: 1,
-      });
-
-      // 2️⃣ LOCAL → badge / UI
-      addItemToCart(
-        {
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          imageUrl: product.imageUrl,
-          description: product.description,
-        },
-        'PRODUCTS'
-      );
+      await addItemToCart({ id: product.id });
 
       if (Platform.OS === 'android') {
         ToastAndroid.show(
@@ -120,7 +109,7 @@ export function ProductsScreen({ navigation }: Props) {
 
       if (Platform.OS === 'android') {
         ToastAndroid.show(
-          'Błąd dodawania do koszyka',
+          'Nie udało się dodać do koszyka',
           ToastAndroid.SHORT
         );
       }
@@ -172,22 +161,30 @@ export function ProductsScreen({ navigation }: Props) {
             <MenuItem
               label="Nazwa A–Z"
               active={sort === 'NAME_ASC'}
-              onPress={() => selectSort('NAME_ASC')}
+              onPress={() =>
+                selectSort('NAME_ASC')
+              }
             />
             <MenuItem
               label="Nazwa Z–A"
               active={sort === 'NAME_DESC'}
-              onPress={() => selectSort('NAME_DESC')}
+              onPress={() =>
+                selectSort('NAME_DESC')
+              }
             />
             <MenuItem
               label="Cena rosnąco"
               active={sort === 'PRICE_ASC'}
-              onPress={() => selectSort('PRICE_ASC')}
+              onPress={() =>
+                selectSort('PRICE_ASC')
+              }
             />
             <MenuItem
               label="Cena malejąco"
               active={sort === 'PRICE_DESC'}
-              onPress={() => selectSort('PRICE_DESC')}
+              onPress={() =>
+                selectSort('PRICE_DESC')
+              }
             />
           </View>
         </Pressable>
@@ -198,20 +195,23 @@ export function ProductsScreen({ navigation }: Props) {
         ref={listRef}
         data={sortedProducts}
         keyExtractor={item => item.id}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{
+          paddingBottom: 100,
+        }}
         scrollEventThrottle={16}
         onScroll={event => {
-          const y = event.nativeEvent.contentOffset.y;
+          const y =
+            event.nativeEvent.contentOffset.y;
           setShowScrollTop(y > 300);
         }}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Pressable
               onPress={() =>
-                navigation.navigate('ProductDetails', {
-                  product: item,
-                  source: 'PRODUCTS',
-                })
+                navigation.navigate(
+                  'ProductDetails',
+                  { product: item }
+                )
               }
             >
               <View style={styles.row}>
@@ -245,7 +245,9 @@ export function ProductsScreen({ navigation }: Props) {
 
             <Pressable
               style={styles.button}
-              onPress={() => handleAddToCart(item)}
+              onPress={() =>
+                handleAddToCart(item)
+              }
             >
               <Text style={styles.buttonText}>
                 Dodaj do koszyka
@@ -266,7 +268,9 @@ export function ProductsScreen({ navigation }: Props) {
             })
           }
         >
-          <Text style={styles.scrollTopText}>⬆</Text>
+          <Text style={styles.scrollTopText}>
+            ⬆
+          </Text>
         </Pressable>
       )}
 
@@ -304,7 +308,8 @@ function MenuItem({
       <Text
         style={[
           styles.menuItemText,
-          active && styles.menuItemTextActive,
+          active &&
+            styles.menuItemTextActive,
         ]}
       >
         {label}

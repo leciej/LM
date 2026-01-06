@@ -25,6 +25,7 @@ export function LoginScreen() {
   const [mode, setMode] = useState<'user' | 'admin' | null>(null);
   const [loginValue, setLoginValue] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const animUser = useRef(new Animated.Value(0)).current;
   const animAdmin = useRef(new Animated.Value(0)).current;
@@ -66,20 +67,70 @@ export function LoginScreen() {
     }
   };
 
+  // ✅ KLUCZOWE: jawny handler gościa
+  const handleGuestLogin = async () => {
+    try {
+      await loginAsGuest();
+    } catch (e) {
+      Alert.alert(
+        'Błąd',
+        'Nie udało się zalogować jako gość'
+      );
+      console.error('GUEST LOGIN ERROR', e);
+    }
+  };
+
+  const renderForm = () => (
+    <View style={styles.form}>
+      <TextInput
+        placeholder="Login lub email"
+        value={loginValue}
+        onChangeText={setLoginValue}
+        style={styles.input}
+        autoCapitalize="none"
+      />
+
+      <View style={styles.passwordWrapper}>
+        <TextInput
+          placeholder="Hasło"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={!showPassword}
+          style={styles.input}
+        />
+        <Pressable
+          onPress={() => setShowPassword(v => !v)}
+          style={styles.eyeButton}
+        >
+          <Text style={styles.eyeText}>
+            {showPassword ? '🙈' : '👁️'}
+          </Text>
+        </Pressable>
+      </View>
+
+      <Pressable
+        style={[styles.button, styles.submitButton]}
+        onPress={handleLogin}
+      >
+        <Text style={styles.buttonText}>Zaloguj</Text>
+      </Pressable>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Guten Tag twoja mać!</Text>
 
+      {/* 👇 TU BYŁ PROBLEM */}
       <Pressable
         style={[styles.button, styles.guestButton]}
-        onPress={loginAsGuest}
+        onPress={handleGuestLogin}
       >
         <Text style={styles.buttonText}>
           Zaloguj jako gość
         </Text>
       </Pressable>
 
-      {/* USER */}
       <Pressable
         style={[styles.button, styles.userButton]}
         onPress={() => toggle('user', animUser)}
@@ -89,34 +140,10 @@ export function LoginScreen() {
         </Text>
       </Pressable>
 
-      <Animated.View
-        style={[styles.animatedForm, formStyle(animUser)]}
-      >
-        <View style={styles.form}>
-          <TextInput
-            placeholder="Login lub email"
-            value={loginValue}
-            onChangeText={setLoginValue}
-            style={styles.input}
-            autoCapitalize="none"
-          />
-          <TextInput
-            placeholder="Hasło"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            style={styles.input}
-          />
-          <Pressable
-            style={[styles.button, styles.submitButton]}
-            onPress={handleLogin}
-          >
-            <Text style={styles.buttonText}>Zaloguj</Text>
-          </Pressable>
-        </View>
+      <Animated.View style={[styles.animatedForm, formStyle(animUser)]}>
+        {renderForm()}
       </Animated.View>
 
-      {/* ADMIN */}
       <Pressable
         style={[styles.button, styles.adminButton]}
         onPress={() => toggle('admin', animAdmin)}
@@ -126,31 +153,8 @@ export function LoginScreen() {
         </Text>
       </Pressable>
 
-      <Animated.View
-        style={[styles.animatedForm, formStyle(animAdmin)]}
-      >
-        <View style={styles.form}>
-          <TextInput
-            placeholder="Login lub email"
-            value={loginValue}
-            onChangeText={setLoginValue}
-            style={styles.input}
-            autoCapitalize="none"
-          />
-          <TextInput
-            placeholder="Hasło"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            style={styles.input}
-          />
-          <Pressable
-            style={[styles.button, styles.submitButton]}
-            onPress={handleLogin}
-          >
-            <Text style={styles.buttonText}>Zaloguj</Text>
-          </Pressable>
-        </View>
+      <Animated.View style={[styles.animatedForm, formStyle(animAdmin)]}>
+        {renderForm()}
       </Animated.View>
 
       <Pressable
@@ -164,6 +168,10 @@ export function LoginScreen() {
     </View>
   );
 }
+
+/* =========================
+   STYLES
+   ========================= */
 
 const styles = StyleSheet.create({
   container: {
@@ -184,7 +192,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   animatedForm: {
-    overflow: 'hidden', // ✅ TU JEST KLUCZ
+    overflow: 'hidden',
   },
   form: {
     marginBottom: 8,
@@ -195,6 +203,17 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 6,
     marginBottom: 8,
+  },
+  passwordWrapper: {
+    position: 'relative',
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: 10,
+    top: 12,
+  },
+  eyeText: {
+    fontSize: 18,
   },
   guestButton: {
     backgroundColor: '#00897b',

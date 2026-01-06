@@ -17,23 +17,21 @@ export type RootStackParamList = {
   Admin: undefined;
 };
 
-const Stack =
-  createNativeStackNavigator<RootStackParamList>();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function AppNavigator() {
-  const { isLoggedIn, isAdmin } = useAuth();
+  const { isLoggedIn, user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {!isLoggedIn ? (
         <>
-          {/* 👋 EKRAN STARTOWY */}
+          {/* Splash tylko jako ENTRY POINT */}
           <Stack.Screen
             name="Splash"
             component={SplashScreen}
           />
-
-          {/* 🔐 AUTH */}
           <Stack.Screen
             name="Login"
             component={LoginScreen}

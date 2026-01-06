@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,16 +10,13 @@ import {
   ToastAndroid,
   Platform,
   ScrollView,
-} from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+} from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { galleryStore } from "@/features/gallery/store/galleryStore";
-import { CartApi } from "@/api/cart";
-import { useAuth } from "@/auth/AuthContext";
-import { GalleryRatingsApi } from "@/api/galleryRatings/galleryRatingsApi";
-
-// ✅ WAŻNE: używamy LOCAL cartStore do badge/UI
-import { addItemToCart } from "@/features/cart/store/cartStore";
+import { galleryStore } from '@/features/gallery/store/galleryStore';
+import { useAuth } from '@/auth/AuthContext';
+import { GalleryRatingsApi } from '@/api/galleryRatings/galleryRatingsApi';
+import { addItemToCart } from '@/features/cart/store/cartStore';
 
 type GalleryStackParamList = {
   Gallery: undefined;
@@ -28,14 +25,17 @@ type GalleryStackParamList = {
   };
 };
 
-type Props = NativeStackScreenProps<GalleryStackParamList, "GalleryDetails">;
+type Props = NativeStackScreenProps<
+  GalleryStackParamList,
+  'GalleryDetails'
+>;
 
 /* =========================
    HELPERS
    ========================= */
 
 const toast = (msg: string) => {
-  if (Platform.OS === "android") {
+  if (Platform.OS === 'android') {
     ToastAndroid.show(msg, ToastAndroid.SHORT);
   }
 };
@@ -59,14 +59,17 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
      STATE (UI)
      ========================= */
 
-  const [previewRating, setPreviewRating] = useState<number | null>(null);
+  const [previewRating, setPreviewRating] =
+    useState<number | null>(null);
 
   const scales = useRef(
     Array.from({ length: 5 }, () => new Animated.Value(1))
   ).current;
 
   const { galleryId } = route.params;
-  const item = galleryStore.items.find((g) => g.id === galleryId);
+  const item = galleryStore.items.find(
+    g => g.id === galleryId
+  );
 
   /* =========================
      LOAD RATINGS
@@ -75,7 +78,7 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
   const loadRatings = useCallback(async () => {
     const res = await GalleryRatingsApi.getByGalleryItemId(
       galleryId,
-      user?.id // może być null, backend ogarnia
+      user?.id
     );
 
     setAverage(res.average);
@@ -84,7 +87,9 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
   }, [galleryId, user?.id]);
 
   useEffect(() => {
-    loadRatings().catch(() => toast("Nie udało się pobrać ocen"));
+    loadRatings().catch(() =>
+      toast('Nie udało się pobrać ocen')
+    );
   }, [loadRatings]);
 
   if (!item) {
@@ -128,46 +133,28 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
         animateStar(i);
       }
 
-      toast("Dodano ocenę ⭐");
+      toast('Dodano ocenę ⭐');
     } catch {
-      toast("Nie udało się dodać oceny");
+      toast('Nie udało się dodać oceny');
       await loadRatings();
     }
   };
 
   /* =========================
-     CART → BACKEND + LOCAL UI
+     CART (BACKEND → STORE)
      ========================= */
 
   const handleAddToCart = async () => {
     if (!isLoggedIn) return;
 
     try {
-      // ✅ 1) zapis do bazy (backend)
-      // ❌ NIE wysyłamy userId — frontowy AddToCartRequestDto go nie ma
-      await CartApi.addItem({
-        productId: item.id,
-        quantity: 1,
-      });
-
-      // ✅ 2) dopisanie do LOCAL koszyka (badge/UI)
-      // mapujemy GalleryItem → ProductDto (minimalne pola)
-      addItemToCart(
-        {
-          id: item.id,
-          name: item.title,
-          price: item.price,
-          imageUrl: item.imageUrl,
-          description: `Arcydzieło: ${item.title}`,
-        } as any,
-        "GALLERY"
-      );
+      await addItemToCart({ id: item.id });
 
       toast(`Dodano "${item.title}" do koszyka`);
       navigation.goBack();
     } catch (err) {
-      console.error("ADD TO CART ERROR", err);
-      toast("Nie udało się dodać do koszyka");
+      console.error('ADD TO CART ERROR', err);
+      toast('Nie udało się dodać do koszyka');
     }
   };
 
@@ -177,18 +164,26 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
 
   const fullStars = Math.floor(average);
   const hasHalfStar = average - fullStars >= 0.5;
-  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+  const emptyStars =
+    5 - fullStars - (hasHalfStar ? 1 : 0);
 
   const myStars = previewRating ?? myRating ?? 0;
 
   const renderAverageStars = () => (
     <>
       {Array.from({ length: fullStars }).map((_, i) => (
-        <Text key={`f-${i}`} style={[styles.star, styles.starActive]}>
+        <Text
+          key={`f-${i}`}
+          style={[styles.star, styles.starActive]}
+        >
           ★
         </Text>
       ))}
-      {hasHalfStar && <Text style={[styles.star, styles.starHalf]}>★</Text>}
+      {hasHalfStar && (
+        <Text style={[styles.star, styles.starHalf]}>
+          ★
+        </Text>
+      )}
       {Array.from({ length: emptyStars }).map((_, i) => (
         <Text key={`e-${i}`} style={styles.star}>
           ★
@@ -198,7 +193,7 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
   );
 
   const renderMyStars = () =>
-    [0, 1, 2, 3, 4].map((i) => (
+    [0, 1, 2, 3, 4].map(i => (
       <Pressable
         key={i}
         onPressIn={() => setPreviewRating(i + 1)}
@@ -224,31 +219,46 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
 
   return (
     <ScrollView style={styles.container}>
-      <Image source={{ uri: item.imageUrl }} style={styles.image} />
+      <Image
+        source={{ uri: item.imageUrl }}
+        style={styles.image}
+      />
 
       <Text style={styles.name}>{item.title}</Text>
       <Text style={styles.author}>{item.artist}</Text>
 
-      <Text style={styles.price}>{item.price.toFixed(2)} zł</Text>
+      <Text style={styles.price}>
+        {item.price.toFixed(2)} zł
+      </Text>
 
       <Button
-        title={isLoggedIn ? "Dodaj do koszyka" : "Zaloguj się, aby dodać do koszyka"}
+        title={
+          isLoggedIn
+            ? 'Dodaj do koszyka'
+            : 'Zaloguj się, aby dodać do koszyka'
+        }
         disabled={!isLoggedIn}
         onPress={handleAddToCart}
       />
 
       {/* ŚREDNIA */}
       <View style={styles.ratingRow}>
-        <View style={styles.starsRow}>{renderAverageStars()}</View>
+        <View style={styles.starsRow}>
+          {renderAverageStars()}
+        </View>
         <Text style={styles.ratingText}>
           {average} / 5 ({votes} ocen)
         </Text>
       </View>
 
       {/* TWOJA OCENA */}
-      <Text style={styles.sectionTitle}>{myRating ? "Twoja ocena" : "Oceń arcydzieło"}</Text>
+      <Text style={styles.sectionTitle}>
+        {myRating ? 'Twoja ocena' : 'Oceń arcydzieło'}
+      </Text>
 
-      <View style={styles.starsRow}>{renderMyStars()}</View>
+      <View style={styles.starsRow}>
+        {renderMyStars()}
+      </View>
 
       {myRating && (
         <Text style={styles.myRatingText}>
@@ -267,47 +277,47 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
   },
   image: {
-    width: "100%",
+    width: '100%',
     height: 260,
     borderRadius: 14,
     marginBottom: 16,
-    backgroundColor: "#eee",
+    backgroundColor: '#eee',
   },
-  name: { fontSize: 22, fontWeight: "700" },
-  author: { fontSize: 14, color: "#666" },
+  name: { fontSize: 22, fontWeight: '700' },
+  author: { fontSize: 14, color: '#666' },
   price: {
     fontSize: 20,
-    fontWeight: "700",
-    color: "#2563EB",
+    fontWeight: '700',
+    color: '#2563EB',
   },
   ratingRow: { marginVertical: 16 },
-  starsRow: { flexDirection: "row" },
+  starsRow: { flexDirection: 'row' },
   star: {
     fontSize: 34,
-    color: "#ccc",
+    color: '#ccc',
     marginRight: 4,
   },
-  starActive: { color: "#f5b301" },
+  starActive: { color: '#f5b301' },
   starHalf: {
-    color: "#f5b301",
+    color: '#f5b301',
     opacity: 0.5,
   },
   ratingText: {
     marginTop: 4,
     fontSize: 14,
-    color: "#444",
+    color: '#444',
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: '700',
     marginBottom: 8,
   },
   myRatingText: {
     marginTop: 8,
     fontSize: 14,
-    color: "#2563EB",
+    color: '#2563EB',
   },
 });

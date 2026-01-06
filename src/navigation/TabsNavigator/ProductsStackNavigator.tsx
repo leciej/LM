@@ -5,7 +5,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ProductsScreen } from '../../screens/ProductsScreen';
 import { ProductDetailsScreen } from '../../screens/ProductDetailsScreen';
 import type { ProductDto } from '../../api/products';
-import type { Source } from '../../features/cart/store/cartStore';
 
 /* =========================
    TYPES
@@ -20,7 +19,6 @@ export type ProductsStackParamList = {
 
   ProductDetails: {
     product: ProductDto;
-    source: Source;
   };
 };
 
@@ -42,7 +40,7 @@ export function ProductsStackNavigator() {
         name="Products"
         component={ProductsScreen}
         options={({ navigation }) => ({
-          title: 'Produkty', // ✅ NAPIS WRACA
+          title: 'Produkty',
           headerRight: () => (
             <Pressable
               onPress={() =>

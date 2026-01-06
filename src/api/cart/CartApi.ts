@@ -1,69 +1,91 @@
 import { httpRequest } from '../client';
-import {
-  CartDto,
-  AddToCartRequestDto,
-  UpdateCartItemRequestDto,
-} from './cart.types';
+
+/* =========================
+   TYPES
+   ========================= */
+
+/**
+ * DTO zwracane przez backend: GET /api/cart
+ * Backend jest źródłem prawdy (price, name, source).
+ */
+export type CartItemDto = {
+  cartItemId: string;
+  id: string; // TargetId (Product / Gallery item id)
+  name: string;
+  price: number;
+  quantity: number;
+  source: 'PRODUCTS' | 'GALLERY';
+  imageUrl?: string | null;
+};
+
+/* =========================
+   API
+   ========================= */
 
 export class CartApi {
-  /**
-   * GET /cart
-   * (na razie backend nie ma GET /api/cart — zostawiamy, żeby nie rozwalić appki;
-   * dodamy endpoint w kolejnym kroku)
-   */
-  static getCart() {
-    return httpRequest<CartDto>({
+  // =====================================================
+  // GET /api/cart
+  // =====================================================
+  static getCart(userId?: number) {
+    const url = userId
+      ? `/cart?userId=${userId}`
+      : '/cart';
+
+    return httpRequest<CartItemDto[]>({
       method: 'GET',
-      url: '/cart',
+      url,
     });
   }
 
-  /**
-   * POST /cart/add  ✅ zgodne z backendem: POST /api/cart/add
-   */
-  static addItem(payload: AddToCartRequestDto) {
-    return httpRequest<{ orderId: string; itemId: string }, AddToCartRequestDto>({
+  // =====================================================
+  // POST /api/cart/add
+  // Frontend wysyła TYLKO ID (+ opcjonalnie quantity)
+  // =====================================================
+  static addItem(payload: {
+    productId: string;
+    quantity?: number;
+  }) {
+    return httpRequest<void>({
       method: 'POST',
       url: '/cart/add',
       body: {
-        ...payload,
-        // pewniak: backend ma Quantity:int
-        quantity: Number((payload as any).quantity ?? 1),
-      } as AddToCartRequestDto,
+        productId: payload.productId,
+        quantity: payload.quantity ?? 1,
+      },
     });
   }
 
-  /**
-   * PUT /cart
-   * (backend jeszcze nie ma — zostawiamy; dodamy później)
-   */
-  static updateItem(payload: UpdateCartItemRequestDto) {
-    return httpRequest<CartDto, UpdateCartItemRequestDto>({
-      method: 'PUT',
-      url: '/cart',
-      body: payload,
+  // =====================================================
+  // PATCH /api/cart/{cartItemId}/quantity?delta=±1
+  // =====================================================
+  static changeQuantity(cartItemId: string, delta: number) {
+    return httpRequest<void>({
+      method: 'PATCH',
+      url: `/cart/${cartItemId}/quantity?delta=${delta}`,
     });
   }
 
-  /**
-   * DELETE /cart/:productId
-   * (backend jeszcze nie ma — zostawiamy; dodamy później)
-   */
-  static removeItem(productId: string) {
-    return httpRequest<CartDto>({
-      method: 'DELETE',
-      url: `/cart/${productId}`,
-    });
-  }
-
-  /**
-   * DELETE /cart
-   * (backend jeszcze nie ma — zostawiamy; dodamy później)
-   */
-  static clear() {
+  // =====================================================
+  // DELETE /api/cart/{cartItemId}
+  // =====================================================
+  static removeItem(cartItemId: string) {
     return httpRequest<void>({
       method: 'DELETE',
-      url: '/cart',
+      url: `/cart/${cartItemId}`,
+    });
+  }
+
+  // =====================================================
+  // DELETE /api/cart/clear
+  // =====================================================
+  static clear(userId?: number) {
+    const url = userId
+      ? `/cart/clear?userId=${userId}`
+      : '/cart/clear';
+
+    return httpRequest<void>({
+      method: 'DELETE',
+      url,
     });
   }
 }

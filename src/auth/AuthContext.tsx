@@ -15,7 +15,7 @@ export type User = {
   name: string;
   surname: string;
   login: string;
-  email: string;
+  email: string | null; // 🔥 MUSI BYĆ NULLABLE
   role: UserRole;
 };
 
@@ -80,7 +80,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   /* =========================
-     LOGIN GUEST
+     LOGIN AS GUEST
      ========================= */
   const loginAsGuest = async () => {
     const res = await http.post<User>('/users/guest');
@@ -93,11 +93,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   /* =========================
-     LOGOUT
+     LOGOUT (DELETE GUEST)
      ========================= */
   const logout = async () => {
-    setUser(null);
-    await AsyncStorage.removeItem(STORAGE_KEY);
+    try {
+      if (user?.role === 'GUEST') {
+        // 🔥 informujemy backend, żeby USUNĄŁ rekord gościa
+        await http.post('/users/logout', user.id);
+      }
+    } catch {
+      // nic – logout i tak ma wyczyścić lokalny stan
+    } finally {
+      setUser(null);
+      await AsyncStorage.removeItem(STORAGE_KEY);
+    }
   };
 
   // ⛔ nie renderuj appki zanim nie odtworzysz sesji

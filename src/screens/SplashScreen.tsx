@@ -50,7 +50,7 @@ export function SplashScreen() {
 
       <Pressable
         style={styles.button}
-        onPress={() => navigation.navigate('Login')}
+        onPress={() => navigation.replace('Login')}
       >
         <Text style={styles.buttonText}>
           Wejdź do sklepu

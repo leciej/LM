@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,22 +10,21 @@ import {
   ScrollView,
   ToastAndroid,
   Platform,
-} from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+} from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import type { ProductsStackParamList } from "../navigation/TabsNavigator/ProductsStackNavigator";
-import { CartApi } from "../api/cart";
-import { addItemToCart } from "../features/cart/store/cartStore";
+import type { ProductsStackParamList } from '../navigation/TabsNavigator/ProductsStackNavigator';
+import { addItemToCart } from '../features/cart/store/cartStore';
 
 import {
   CommentsApi,
   CommentDto,
-} from "@/api/comments/commentsApi";
-import { useAuth } from "@/auth/AuthContext";
+} from '@/api/comments/commentsApi';
+import { useAuth } from '@/auth/AuthContext';
 
 type Props = NativeStackScreenProps<
   ProductsStackParamList,
-  "ProductDetails"
+  'ProductDetails'
 >;
 
 /* =========================
@@ -42,26 +41,32 @@ function formatRelativeDate(dateString: string): string {
   const diffHour = Math.floor(diffMin / 60);
   const diffDay = Math.floor(diffHour / 24);
 
-  if (diffSec < 60) return "przed chwilą";
+  if (diffSec < 60) return 'przed chwilą';
   if (diffMin < 60) return `${diffMin} min temu`;
   if (diffHour < 24) return `${diffHour} godz. temu`;
-  if (diffDay === 1) return "wczoraj";
+  if (diffDay === 1) return 'wczoraj';
   if (diffDay < 7) return `${diffDay} dni temu`;
 
-  return date.toLocaleDateString("pl-PL");
+  return date.toLocaleDateString('pl-PL');
 }
 
 /* =========================
    COMPONENT
    ========================= */
 
-export function ProductDetailsScreen({ route, navigation }: Props) {
+export function ProductDetailsScreen({
+  route,
+  navigation,
+}: Props) {
   const { product: dto } = route.params;
   const { user } = useAuth();
 
-  const [commentText, setCommentText] = useState("");
-  const [comments, setComments] = useState<CommentDto[]>([]);
-  const [loadingComments, setLoadingComments] = useState(true);
+  const [commentText, setCommentText] =
+    useState('');
+  const [comments, setComments] =
+    useState<CommentDto[]>([]);
+  const [loadingComments, setLoadingComments] =
+    useState(true);
 
   /* =========================
      LOAD COMMENTS
@@ -73,9 +78,9 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
     CommentsApi.getByProductId(dto.id)
       .then(setComments)
       .catch(() => {
-        if (Platform.OS === "android") {
+        if (Platform.OS === 'android') {
           ToastAndroid.show(
-            "Nie udało się pobrać komentarzy",
+            'Nie udało się pobrać komentarzy',
             ToastAndroid.SHORT
           );
         }
@@ -84,30 +89,14 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
   }, [dto.id]);
 
   /* =========================
-     CART → BACKEND + LOCAL
+     CART (BACKEND → STORE)
      ========================= */
 
   const handleAddToCart = async () => {
     try {
-      // 1️⃣ BACKEND – zapis do bazy
-      await CartApi.addItem({
-        productId: dto.id,
-        quantity: 1,
-      });
+      await addItemToCart({ id: dto.id });
 
-      // 2️⃣ LOCAL – badge / UI
-      addItemToCart(
-        {
-          id: dto.id,
-          name: dto.name,
-          price: dto.price,
-          imageUrl: dto.imageUrl,
-          description: dto.description,
-        },
-        "PRODUCTS"
-      );
-
-      if (Platform.OS === "android") {
+      if (Platform.OS === 'android') {
         ToastAndroid.show(
           `Dodano "${dto.name}"`,
           ToastAndroid.SHORT
@@ -116,11 +105,11 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
 
       navigation.goBack();
     } catch (err) {
-      console.error("ADD TO CART ERROR", err);
+      console.error('ADD TO CART ERROR', err);
 
-      if (Platform.OS === "android") {
+      if (Platform.OS === 'android') {
         ToastAndroid.show(
-          "Nie udało się dodać do koszyka",
+          'Nie udało się dodać do koszyka',
           ToastAndroid.SHORT
         );
       }
@@ -135,17 +124,20 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
     if (!commentText.trim() || !user) return;
 
     try {
-      const newComment = await CommentsApi.create(dto.id, {
-        userId: user.id,
-        text: commentText.trim(),
-      });
+      const newComment = await CommentsApi.create(
+        dto.id,
+        {
+          userId: user.id,
+          text: commentText.trim(),
+        }
+      );
 
       setComments(prev => [newComment, ...prev]);
-      setCommentText("");
+      setCommentText('');
     } catch {
-      if (Platform.OS === "android") {
+      if (Platform.OS === 'android') {
         ToastAndroid.show(
-          "Nie udało się dodać komentarza",
+          'Nie udało się dodać komentarza',
           ToastAndroid.SHORT
         );
       }
@@ -168,9 +160,13 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
 
         <View style={styles.info}>
           <Text style={styles.name}>{dto.name}</Text>
-          <Text style={styles.price}>{dto.price} zł</Text>
+          <Text style={styles.price}>
+            {dto.price} zł
+          </Text>
           {dto.description && (
-            <Text style={styles.desc}>{dto.description}</Text>
+            <Text style={styles.desc}>
+              {dto.description}
+            </Text>
           )}
         </View>
       </View>
@@ -190,9 +186,13 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
         renderItem={({ item }) => (
           <View style={styles.comment}>
             <View style={styles.commentHeader}>
-              <Text style={styles.author}>{item.author}</Text>
+              <Text style={styles.author}>
+                {item.author}
+              </Text>
               <Text style={styles.date}>
-                {formatRelativeDate(item.createdAt)}
+                {formatRelativeDate(
+                  item.createdAt
+                )}
               </Text>
             </View>
             <Text>{item.text}</Text>
@@ -200,7 +200,9 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
         )}
         ListEmptyComponent={
           !loadingComments ? (
-            <Text style={styles.empty}>Brak komentarzy</Text>
+            <Text style={styles.empty}>
+              Brak komentarzy
+            </Text>
           ) : null
         }
         scrollEnabled={false}
@@ -228,53 +230,65 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
-  hero: { flexDirection: "row", marginBottom: 20 },
+
+  hero: {
+    flexDirection: 'row',
+    marginBottom: 20,
+  },
+
   image: {
-    width: "25%",
+    width: '25%',
     aspectRatio: 1,
     borderRadius: 14,
     marginRight: 16,
-    backgroundColor: "#eee",
+    backgroundColor: '#eee',
   },
-  info: { width: "75%" },
-  name: { fontSize: 20, fontWeight: "700" },
+
+  info: { width: '75%' },
+
+  name: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+
   price: { marginBottom: 8 },
-  desc: { color: "#555" },
+
+  desc: { color: '#555' },
 
   sectionTitle: {
     marginTop: 24,
     fontSize: 18,
-    fontWeight: "700",
+    fontWeight: '700',
   },
 
   comment: {
     padding: 8,
-    backgroundColor: "#eee",
+    backgroundColor: '#eee',
     borderRadius: 6,
     marginBottom: 6,
   },
 
   commentHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 4,
   },
 
-  author: { fontWeight: "700" },
+  author: { fontWeight: '700' },
 
   date: {
     fontSize: 12,
-    color: "#666",
+    color: '#666',
   },
 
   empty: {
-    fontStyle: "italic",
-    color: "#666",
+    fontStyle: 'italic',
+    color: '#666',
   },
 
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: '#ccc',
     padding: 8,
     borderRadius: 6,
     marginBottom: 8,
