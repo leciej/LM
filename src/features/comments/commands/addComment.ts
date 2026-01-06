@@ -1,10 +1,11 @@
-import { addCommentToStore } from '../commentsStore';
+import { addCommentApi } from '../commentsApi';
 
-export function addComment(
+export async function addComment(
   productId: string,
-  text: string
-): void {
+  text: string,
+  userId: number
+) {
   if (!text.trim()) return;
 
-  addCommentToStore(productId, text);
+  await addCommentApi(productId, userId, text);
 }

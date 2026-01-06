@@ -20,6 +20,7 @@ import {
   CommentsApi,
   CommentDto,
 } from '@/api/comments/commentsApi';
+
 import { useAuth } from '@/auth/AuthContext';
 
 type Props = NativeStackScreenProps<
@@ -61,12 +62,10 @@ export function ProductDetailsScreen({
   const { product: dto } = route.params;
   const { user } = useAuth();
 
-  const [commentText, setCommentText] =
-    useState('');
-  const [comments, setComments] =
-    useState<CommentDto[]>([]);
-  const [loadingComments, setLoadingComments] =
-    useState(true);
+  const [commentText, setCommentText] = useState('');
+  const [comments, setComments] = useState<CommentDto[]>([]);
+  const [loadingComments, setLoadingComments] = useState(true);
+  const [addingComment, setAddingComment] = useState(false);
 
   /* =========================
      LOAD COMMENTS
@@ -89,7 +88,7 @@ export function ProductDetailsScreen({
   }, [dto.id]);
 
   /* =========================
-     CART (BACKEND → STORE)
+     CART
      ========================= */
 
   const handleAddToCart = async () => {
@@ -124,6 +123,8 @@ export function ProductDetailsScreen({
     if (!commentText.trim() || !user) return;
 
     try {
+      setAddingComment(true);
+
       const newComment = await CommentsApi.create(
         dto.id,
         {
@@ -141,6 +142,8 @@ export function ProductDetailsScreen({
           ToastAndroid.SHORT
         );
       }
+    } finally {
+      setAddingComment(false);
     }
   };
 
@@ -160,13 +163,9 @@ export function ProductDetailsScreen({
 
         <View style={styles.info}>
           <Text style={styles.name}>{dto.name}</Text>
-          <Text style={styles.price}>
-            {dto.price} zł
-          </Text>
+          <Text style={styles.price}>{dto.price} zł</Text>
           {dto.description && (
-            <Text style={styles.desc}>
-              {dto.description}
-            </Text>
+            <Text style={styles.desc}>{dto.description}</Text>
           )}
         </View>
       </View>
@@ -190,9 +189,7 @@ export function ProductDetailsScreen({
                 {item.author}
               </Text>
               <Text style={styles.date}>
-                {formatRelativeDate(
-                  item.createdAt
-                )}
+                {formatRelativeDate(item.createdAt)}
               </Text>
             </View>
             <Text>{item.text}</Text>
@@ -210,15 +207,24 @@ export function ProductDetailsScreen({
 
       <TextInput
         style={styles.input}
-        placeholder="Dodaj komentarz..."
+        placeholder={
+          user
+            ? 'Dodaj komentarz...'
+            : 'Zaloguj się, aby dodać komentarz'
+        }
         value={commentText}
         onChangeText={setCommentText}
+        editable={!!user}
       />
 
       <Button
-        title="Dodaj komentarz"
+        title={
+          addingComment
+            ? 'Dodawanie...'
+            : 'Dodaj komentarz'
+        }
         onPress={handleAddComment}
-        disabled={!user}
+        disabled={!user || addingComment}
       />
     </ScrollView>
   );

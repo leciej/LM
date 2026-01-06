@@ -1,6 +1,7 @@
-import { getCommentsSnapshot } from '../commentsStore';
-import type { Comment } from '../commentsStore';
+import { fetchComments } from '../commentsApi';
 
-export function getComments(productId: string): Comment[] {
-  return getCommentsSnapshot(productId);
+export async function getComments(
+  productId: string
+) {
+  return await fetchComments(productId);
 }
