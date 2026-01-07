@@ -1,4 +1,5 @@
 import { CartApi } from '../../../api/cart';
+import { getCurrentUserId } from '../../../auth/userSession';
 
 /* =========================
    TYPES
@@ -7,8 +8,8 @@ import { CartApi } from '../../../api/cart';
 export type Source = 'PRODUCTS' | 'GALLERY';
 
 export type CartItem = {
-  cartItemId: string; // backend CartItems.Id
-  id: string;         // TargetId (product / gallery item id)
+  cartItemId: string;
+  id: string;
   name: string;
   price: number;
   quantity: number;
@@ -23,7 +24,7 @@ export type CartItem = {
 let cart: CartItem[] = [];
 
 /* =========================
-   SUBSCRIPTIONS (UI)
+   SUBSCRIPTIONS
    ========================= */
 
 const listeners = new Set<() => void>();
@@ -66,7 +67,16 @@ export function getGalleryCount(): number {
    ========================= */
 
 export async function refreshCart(): Promise<void> {
-  const items = await CartApi.getCart();
+  const userId = getCurrentUserId();
+
+  // 🔥 KLUCZOWE: brak usera = pusty koszyk
+  if (!userId) {
+    cart = [];
+    notify();
+    return;
+  }
+
+  const items = await CartApi.getCart(userId);
 
   cart = items.map(item => ({
     cartItemId: item.cartItemId,
@@ -85,16 +95,19 @@ export async function refreshCart(): Promise<void> {
    ADD
    ========================= */
 
-/**
- * Jedyna poprawna funkcja dodawania do koszyka.
- * Frontend przekazuje TYLKO ID.
- */
-export async function addItemToCart(
-  payload: { id: string; quantity?: number }
-): Promise<void> {
+export async function addItemToCart(payload: {
+  id: string;
+  quantity?: number;
+}): Promise<void> {
+  const userId = getCurrentUserId();
+
+  // 🔥 bez usera NIE dodajemy
+  if (!userId) return;
+
   await CartApi.addItem({
     productId: payload.id,
     quantity: payload.quantity ?? 1,
+    userId,
   });
 
   await refreshCart();
@@ -104,16 +117,18 @@ export async function addItemToCart(
    UPDATE
    ========================= */
 
-export async function increaseItemInCart(
-  cartItemId: string
-): Promise<void> {
+export async function increaseItemInCart(cartItemId: string) {
+  const userId = getCurrentUserId();
+  if (!userId) return;
+
   await CartApi.changeQuantity(cartItemId, +1);
   await refreshCart();
 }
 
-export async function decreaseItemInCart(
-  cartItemId: string
-): Promise<void> {
+export async function decreaseItemInCart(cartItemId: string) {
+  const userId = getCurrentUserId();
+  if (!userId) return;
+
   await CartApi.changeQuantity(cartItemId, -1);
   await refreshCart();
 }
@@ -122,14 +137,34 @@ export async function decreaseItemInCart(
    DELETE
    ========================= */
 
-export async function removeItemFromCart(
-  cartItemId: string
-): Promise<void> {
+export async function removeItemFromCart(cartItemId: string) {
+  const userId = getCurrentUserId();
+  if (!userId) return;
+
   await CartApi.removeItem(cartItemId);
   await refreshCart();
 }
 
-export async function clearCart(): Promise<void> {
-  await CartApi.clear();
-  await refreshCart();
+export async function clearCart() {
+  const userId = getCurrentUserId();
+
+  // 🔥 GOŚĆ / BRAK USERA → lokalnie
+  if (!userId) {
+    cart = [];
+    notify();
+    return;
+  }
+
+  await CartApi.clear(userId);
+  cart = [];
+  notify();
+}
+
+/* =========================
+   RESET (LOGOUT)
+   ========================= */
+
+export function resetCartStore() {
+  cart = [];
+  notify();
 }

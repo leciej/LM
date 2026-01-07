@@ -1,2 +1,2 @@
 export { CartApi } from './CartApi';
-export * from './cart.types';
+export type { CartItemDto } from './cart.types';

@@ -7,6 +7,14 @@ import React, {
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { http } from '../api/http';
+import { CartApi } from '../api/cart';
+import {
+  refreshCart,
+  resetCartStore,
+} from '../features/cart/store/cartStore';
+import {
+  setCurrentUserId,
+} from './userSession';
 
 export type UserRole = 'GUEST' | 'USER' | 'ADMIN';
 
@@ -15,7 +23,7 @@ export type User = {
   name: string;
   surname: string;
   login: string;
-  email: string | null; // 🔥 MUSI BYĆ NULLABLE
+  email: string | null;
   role: UserRole;
 };
 
@@ -50,7 +58,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       try {
         const stored = await AsyncStorage.getItem(STORAGE_KEY);
         if (stored) {
-          setUser(JSON.parse(stored));
+          const parsed: User = JSON.parse(stored);
+          setUser(parsed);
+          setCurrentUserId(parsed.id);
+          await refreshCart();
         }
       } finally {
         setInitialized(true);
@@ -61,8 +72,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   /* =========================
-     LOGIN USER / ADMIN
+     LOGIN
      ========================= */
+
   const login = async (
     loginOrEmail: string,
     password: string
@@ -73,46 +85,55 @@ export function AuthProvider({ children }: AuthProviderProps) {
     );
 
     setUser(res.data);
+    setCurrentUserId(res.data.id);
+
     await AsyncStorage.setItem(
       STORAGE_KEY,
       JSON.stringify(res.data)
     );
+
+    await refreshCart();
   };
 
-  /* =========================
-     LOGIN AS GUEST
-     ========================= */
   const loginAsGuest = async () => {
     const res = await http.post<User>('/users/guest');
 
     setUser(res.data);
+    setCurrentUserId(res.data.id);
+
     await AsyncStorage.setItem(
       STORAGE_KEY,
       JSON.stringify(res.data)
     );
+
+    await refreshCart();
   };
 
   /* =========================
-     LOGOUT (DELETE GUEST)
+     LOGOUT (FULL CLEAN)
      ========================= */
+
   const logout = async () => {
     try {
-      if (user?.role === 'GUEST') {
-        // 🔥 informujemy backend, żeby USUNĄŁ rekord gościa
-        await http.post('/users/logout', user.id);
+      if (user) {
+        // backend: czyść koszyk usera
+        await CartApi.clear(user.id);
+
+        // backend: usuń guest
+        if (user.role === 'GUEST') {
+          await http.post('/users/logout', user.id);
+        }
       }
-    } catch {
-      // nic – logout i tak ma wyczyścić lokalny stan
     } finally {
+      // frontend: TOTAL RESET
+      setCurrentUserId(null);
+      resetCartStore();
       setUser(null);
       await AsyncStorage.removeItem(STORAGE_KEY);
     }
   };
 
-  // ⛔ nie renderuj appki zanim nie odtworzysz sesji
-  if (!initialized) {
-    return null;
-  }
+  if (!initialized) return null;
 
   return (
     <AuthContext.Provider
