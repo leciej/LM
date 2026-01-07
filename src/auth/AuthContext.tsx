@@ -12,9 +12,7 @@ import {
   refreshCart,
   resetCartStore,
 } from '../features/cart/store/cartStore';
-import {
-  setCurrentUserId,
-} from './userSession';
+import { setCurrentUserId } from './userSession';
 
 export type UserRole = 'GUEST' | 'USER' | 'ADMIN';
 
@@ -72,9 +70,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   /* =========================
-     LOGIN
+     LOGIN USER / ADMIN
      ========================= */
-
   const login = async (
     loginOrEmail: string,
     password: string
@@ -95,6 +92,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     await refreshCart();
   };
 
+  /* =========================
+     LOGIN GUEST
+     ========================= */
   const loginAsGuest = async () => {
     const res = await http.post<User>('/users/guest');
 
@@ -110,22 +110,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   /* =========================
-     LOGOUT (FULL CLEAN)
+     LOGOUT (VARIANT A)
      ========================= */
-
   const logout = async () => {
     try {
-      if (user) {
-        // backend: czyść koszyk usera
+      // 🔥 TYLKO GOŚĆ → backend cleanup
+      if (user?.role === 'GUEST') {
         await CartApi.clear(user.id);
-
-        // backend: usuń guest
-        if (user.role === 'GUEST') {
-          await http.post('/users/logout', user.id);
-        }
+        await http.post('/users/logout', user.id);
       }
     } finally {
-      // frontend: TOTAL RESET
+      // frontend reset ZAWSZE
       setCurrentUserId(null);
       resetCartStore();
       setUser(null);
