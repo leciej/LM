@@ -28,6 +28,8 @@ import {
 import type { CartItem } from '../features/cart/store/cartStore';
 
 import { addPurchase } from '../features/purchases/store/purchasesStore';
+import { CheckoutApi } from '../api/checkout/CheckoutApi';
+import { getCurrentUserId } from '../auth/userSession';
 
 const FALLBACK_IMAGE =
   'https://picsum.photos/200/200?blur=1';
@@ -145,7 +147,21 @@ export function CartScreen() {
       : sum;
   }, 0);
 
-  const order = () => {
+  /* =========================
+     CHECKOUT (REAL BACKEND)
+     ========================= */
+
+  const order = async () => {
+    const userId = getCurrentUserId();
+
+    if (!userId) {
+      Alert.alert(
+        'Błąd',
+        'Musisz być zalogowany, aby złożyć zamówienie.'
+      );
+      return;
+    }
+
     if (!Number.isFinite(total)) {
       Alert.alert('Błąd', 'Nieprawidłowa cena');
       return;
@@ -163,15 +179,27 @@ export function CartScreen() {
       return;
     }
 
-    addPurchase(purchasedItems);
+    try {
+      const res = await CheckoutApi.checkout(userId);
 
-    Alert.alert(
-      'Zamówienie złożone',
-      `Suma: ${formatPrice(total)} zł`
-    );
+      addPurchase(purchasedItems);
 
-    clearCart();
-    setChecked({});
+      Alert.alert(
+        'Zamówienie złożone',
+        `Suma: ${formatPrice(
+          res.totalAmount
+        )} zł`
+      );
+
+      await clearCart();
+      setChecked({});
+    } catch (e: any) {
+      Alert.alert(
+        'Błąd',
+        e?.message ??
+          'Nie udało się złożyć zamówienia'
+      );
+    }
   };
 
   /* =========================

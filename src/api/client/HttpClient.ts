@@ -11,7 +11,7 @@ type RequestOptions<TBody> = {
   timeoutMs?: number;
 };
 
-const BASE_URL = 'http://10.0.2.2:5225/api'; // ⬅️ POPRAWIONY PORT
+const BASE_URL = 'http://10.0.2.2:5225/api';
 const DEFAULT_TIMEOUT = 15_000;
 
 let authToken: string | null = null;
@@ -24,6 +24,15 @@ const buildUrl = (url: string) => {
   if (url.startsWith('http')) return url;
   return `${BASE_URL}${url.startsWith('/') ? url : `/${url}`}`;
 };
+
+function tryParseJson(text: string) {
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
 
 export async function httpRequest<TResponse, TBody = unknown>(
   options: RequestOptions<TBody>,
@@ -59,18 +68,21 @@ export async function httpRequest<TResponse, TBody = unknown>(
     });
 
     const text = await response.text();
-    const data = text ? JSON.parse(text) : null;
+    const json = tryParseJson(text);
 
     if (!response.ok) {
       throw new ApiError({
-        message: data?.message ?? `HTTP ${response.status}`,
+        message:
+          json?.message ??
+          text ??
+          `HTTP ${response.status}`,
         status: response.status,
         url,
-        data,
+        data: json ?? text ?? null,
       });
     }
 
-    return data as TResponse;
+    return (json ?? null) as TResponse;
   } finally {
     clearTimeout(timeoutId);
   }
