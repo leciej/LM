@@ -17,7 +17,7 @@ export type Activity = {
   createdAt: number;
 };
 
-const MAX_ITEMS = 8;
+const MAX_ITEMS = 5;
 
 let activities: Activity[] = [];
 const listeners = new Set<() => void>();

@@ -14,6 +14,11 @@ import {
 } from '../features/cart/store/cartStore';
 import { setCurrentUserId } from './userSession';
 
+import { resetActivity } from '../features/activity/store/activityStore';
+import { resetRatings } from '../features/ratings/store/ratingsStore';
+import { resetComments } from '../features/comments/commentsStore';
+import { resetPurchases } from '../features/purchases/store/purchasesStore';
+
 export type UserRole = 'GUEST' | 'USER' | 'ADMIN';
 
 export type User = {
@@ -76,6 +81,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     loginOrEmail: string,
     password: string
   ) => {
+    // reset FE stores to avoid "guest -> user" carry-over
+    resetActivity();
+    resetRatings();
+    resetComments();
+    resetPurchases();
+
     const res = await http.post<User>(
       '/users/login',
       { loginOrEmail, password }
@@ -96,6 +107,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
      LOGIN GUEST
      ========================= */
   const loginAsGuest = async () => {
+    // reset FE stores to avoid previous session carry-over
+    resetActivity();
+    resetRatings();
+    resetComments();
+    resetPurchases();
+
     const res = await http.post<User>('/users/guest');
 
     setUser(res.data);
@@ -122,7 +139,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } finally {
       // frontend reset ZAWSZE
       setCurrentUserId(null);
+
+      resetActivity();
+      resetRatings();
+      resetComments();
+      resetPurchases();
       resetCartStore();
+
       setUser(null);
       await AsyncStorage.removeItem(STORAGE_KEY);
     }
