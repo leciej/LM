@@ -57,20 +57,15 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
   const [myRating, setMyRating] = useState<number | null>(null);
 
   /* =========================
-     STATE (UI)
+     ANIMATION
      ========================= */
-
-  const [previewRating, setPreviewRating] =
-    useState<number | null>(null);
 
   const scales = useRef(
     Array.from({ length: 5 }, () => new Animated.Value(1))
   ).current;
 
   const { galleryId } = route.params;
-  const item = galleryStore.items.find(
-    g => g.id === galleryId
-  );
+  const item = galleryStore.items.find(g => g.id === galleryId);
 
   /* =========================
      LOAD RATINGS
@@ -119,7 +114,7 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
   };
 
   const commitRating = async (value: number) => {
-    if (!isLoggedIn || myRating !== null || !user) return;
+    if (!isLoggedIn || !user || myRating !== null) return;
 
     try {
       await GalleryRatingsApi.create(galleryId, {
@@ -127,7 +122,7 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
         value,
       });
 
-      addActivity('RATING'); // ✅ JEDYNA DODANA LINIJKA
+      addActivity('RATING');
 
       setMyRating(value);
       await loadRatings();
@@ -139,12 +134,11 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
       toast('Dodano ocenę ⭐');
     } catch {
       toast('Nie udało się dodać oceny');
-      await loadRatings();
     }
   };
 
   /* =========================
-     CART (BACKEND → STORE)
+     CART
      ========================= */
 
   const handleAddToCart = async () => {
@@ -152,40 +146,30 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
 
     try {
       await addItemToCart({ id: item.id });
-
       toast(`Dodano "${item.title}" do koszyka`);
       navigation.goBack();
-    } catch (err) {
-      console.error('ADD TO CART ERROR', err);
+    } catch {
       toast('Nie udało się dodać do koszyka');
     }
   };
 
   /* =========================
-     RENDER HELPERS
+     RENDER STARS
      ========================= */
 
   const fullStars = Math.floor(average);
   const hasHalfStar = average - fullStars >= 0.5;
-  const emptyStars =
-    5 - fullStars - (hasHalfStar ? 1 : 0);
-
-  const myStars = previewRating ?? myRating ?? 0;
+  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
   const renderAverageStars = () => (
     <>
       {Array.from({ length: fullStars }).map((_, i) => (
-        <Text
-          key={`f-${i}`}
-          style={[styles.star, styles.starActive]}
-        >
+        <Text key={`f-${i}`} style={[styles.star, styles.starActive]}>
           ★
         </Text>
       ))}
       {hasHalfStar && (
-        <Text style={[styles.star, styles.starHalf]}>
-          ★
-        </Text>
+        <Text style={[styles.star, styles.starHalf]}>★</Text>
       )}
       {Array.from({ length: emptyStars }).map((_, i) => (
         <Text key={`e-${i}`} style={styles.star}>
@@ -196,19 +180,17 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
   );
 
   const renderMyStars = () =>
-    [0, 1, 2, 3, 4].map(i => (
+    [1, 2, 3, 4, 5].map(value => (
       <Pressable
-        key={i}
-        onPressIn={() => setPreviewRating(i + 1)}
-        onPressOut={() => setPreviewRating(null)}
-        onPress={() => commitRating(i + 1)}
+        key={value}
+        onPress={() => commitRating(value)}
         disabled={!isLoggedIn || myRating !== null}
       >
         <Animated.Text
           style={[
             styles.star,
-            i < myStars && styles.starActive,
-            { transform: [{ scale: scales[i] }] },
+            value <= (myRating ?? 0) && styles.starActive,
+            { transform: [{ scale: scales[value - 1] }] },
           ]}
         >
           ★
@@ -222,17 +204,12 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
 
   return (
     <ScrollView style={styles.container}>
-      <Image
-        source={{ uri: item.imageUrl }}
-        style={styles.image}
-      />
+      <Image source={{ uri: item.imageUrl }} style={styles.image} />
 
       <Text style={styles.name}>{item.title}</Text>
       <Text style={styles.author}>{item.artist}</Text>
 
-      <Text style={styles.price}>
-        {item.price.toFixed(2)} zł
-      </Text>
+      <Text style={styles.price}>{item.price.toFixed(2)} zł</Text>
 
       <Button
         title={
@@ -245,9 +222,7 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
       />
 
       <View style={styles.ratingRow}>
-        <View style={styles.starsRow}>
-          {renderAverageStars()}
-        </View>
+        <View style={styles.starsRow}>{renderAverageStars()}</View>
         <Text style={styles.ratingText}>
           {average} / 5 ({votes} ocen)
         </Text>
@@ -257,9 +232,7 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
         {myRating ? 'Twoja ocena' : 'Oceń arcydzieło'}
       </Text>
 
-      <View style={styles.starsRow}>
-        {renderMyStars()}
-      </View>
+      <View style={styles.starsRow}>{renderMyStars()}</View>
 
       {myRating && (
         <Text style={styles.myRatingText}>
@@ -302,15 +275,8 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   starActive: { color: '#f5b301' },
-  starHalf: {
-    color: '#f5b301',
-    opacity: 0.5,
-  },
-  ratingText: {
-    marginTop: 4,
-    fontSize: 14,
-    color: '#444',
-  },
+  starHalf: { color: '#f5b301', opacity: 0.5 },
+  ratingText: { marginTop: 4, fontSize: 14, color: '#444' },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',

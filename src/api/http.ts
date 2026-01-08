@@ -8,12 +8,17 @@ export const http = axios.create({
   },
 });
 
+/* =========================
+   REQUEST LOGGING
+   ========================= */
+
 http.interceptors.request.use(
   config => {
     console.log(
       '[HTTP REQUEST]',
       config.method?.toUpperCase(),
-      config.url
+      config.url,
+      config.data ?? ''
     );
     return config;
   },
@@ -22,6 +27,10 @@ http.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+
+/* =========================
+   RESPONSE LOGGING
+   ========================= */
 
 http.interceptors.response.use(
   response => {
@@ -35,8 +44,9 @@ http.interceptors.response.use(
   error => {
     console.log(
       '[HTTP RESPONSE ERROR]',
-      error.message,
-      error.config?.url
+      error.response?.status,
+      error.config?.url,
+      error.response?.data
     );
     return Promise.reject(error);
   }

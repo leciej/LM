@@ -1,27 +1,9 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
 import { useSyncExternalStore } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth, type UserRole } from '../auth/AuthContext';
-
-import {
-  subscribe as subscribePurchases,
-  getPurchasedCount,
-  getTotalSpent,
-} from '../features/purchases/store/purchasesStore';
-
-import {
-  subscribe as subscribeRatings,
-  getRatedCount,
-  getAverageRating,
-  getRatedCountTotal,
-  getAverageRatingTotal,
-} from '../features/ratings/store/ratingsStore';
-
-import {
-  subscribe as subscribeComments,
-  getCommentsCount,
-  getCommentsCountTotal,
-} from '../features/comments/commentsStore';
+import { http } from '../api/http';
 
 import {
   subscribe as subscribeActivity,
@@ -36,14 +18,8 @@ const ROLE_META: Record<
   Exclude<UserRole, 'GUEST'>,
   { label: string; color: string }
 > = {
-  USER: {
-    label: '👤 Użytkownik',
-    color: '#1976d2',
-  },
-  ADMIN: {
-    label: '🛠 Administrator',
-    color: '#111827',
-  },
+  USER: { label: '👤 Użytkownik', color: '#1976d2' },
+  ADMIN: { label: '🛠 Administrator', color: '#111827' },
 };
 
 const FALLBACK_META = {
@@ -77,11 +53,9 @@ const label = (type: string) =>
     PURCHASE: '🛒 Złożono zamówienie',
     ADD_TO_CART: '➕ Dodano do koszyka',
     REMOVE_FROM_CART: '🗑 Usunięto z koszyka',
-
     ADD_PRODUCT: '➕ Dodano produkt',
     EDIT_PRODUCT: '✏️ Edytowano produkt',
     REMOVE_PRODUCT: '🗑 Usunięto produkt',
-
     ADD_GALLERY: '🖼➕ Dodano arcydzieło',
     EDIT_GALLERY: '🖼✏️ Edytowano arcydzieło',
     REMOVE_GALLERY: '🖼🗑 Usunięto arcydzieło',
@@ -97,37 +71,24 @@ function timeAgo(timestamp: number) {
 }
 
 /* =========================
+   TYPES
+   ========================= */
+
+type UserStats = {
+  purchasedCount: number;
+  totalSpent: number;
+  ratedCount: number;
+  averageRating: number;
+  commentsCount: number;
+};
+
+/* =========================
    SCREEN
    ========================= */
 
 export function ProfileScreen() {
   const { user, logout, isAdmin } = useAuth();
   const meta = roleMeta(user?.role ?? null);
-
-  const purchasedCount = useSyncExternalStore(
-    subscribePurchases,
-    getPurchasedCount
-  );
-
-  const totalSpent = useSyncExternalStore(
-    subscribePurchases,
-    getTotalSpent
-  );
-
-  const ratedCount = useSyncExternalStore(
-    subscribeRatings,
-    isAdmin ? getRatedCountTotal : getRatedCount
-  );
-
-  const avgRating = useSyncExternalStore(
-    subscribeRatings,
-    isAdmin ? getAverageRatingTotal : getAverageRating
-  );
-
-  const commentsCount = useSyncExternalStore(
-    subscribeComments,
-    isAdmin ? getCommentsCountTotal : getCommentsCount
-  );
 
   const activities = useSyncExternalStore(
     subscribeActivity,
@@ -137,6 +98,43 @@ export function ProfileScreen() {
   const visibleActivities = isAdmin
     ? activities.filter(a => isAdminType(a.type))
     : activities.filter(a => !isAdminType(a.type));
+
+  const [stats, setStats] = useState<UserStats>({
+    purchasedCount: 0,
+    totalSpent: 0,
+    ratedCount: 0,
+    averageRating: 0,
+    commentsCount: 0,
+  });
+
+  // 🔥 KLUCZ: odświeżanie statystyk ZA KAŻDYM WEJŚCIEM NA EKRAN
+  useFocusEffect(
+    useCallback(() => {
+      if (!user) return;
+
+      let active = true;
+
+      http
+        .get<UserStats>(`/users/${user.id}/stats`)
+        .then(res => {
+          if (active) setStats(res.data);
+        })
+        .catch(() => {
+          if (active)
+            setStats({
+              purchasedCount: 0,
+              totalSpent: 0,
+              ratedCount: 0,
+              averageRating: 0,
+              commentsCount: 0,
+            });
+        });
+
+      return () => {
+        active = false;
+      };
+    }, [user])
+  );
 
   return (
     <View style={styles.container}>
@@ -148,10 +146,7 @@ export function ProfileScreen() {
           </Text>
         </View>
 
-        <Text style={styles.title}>
-          {user?.name ?? 'Gość'}
-        </Text>
-
+        <Text style={styles.title}>{user?.name ?? 'Gość'}</Text>
         <Text style={styles.subtitle}>{user?.email}</Text>
 
         <View style={styles.roleBadge}>
@@ -164,9 +159,7 @@ export function ProfileScreen() {
       {/* DASHBOARD */}
       <View style={styles.dashboard}>
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>
-            Ostatnia aktywność
-          </Text>
+          <Text style={styles.sectionTitle}>Ostatnia aktywność</Text>
 
           {visibleActivities.length === 0 ? (
             <Text style={styles.muted}>Brak aktywności</Text>
@@ -184,18 +177,19 @@ export function ProfileScreen() {
 
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>
-            {isAdmin
-              ? 'Statystyki platformy'
-              : 'Twoje statystyki'}
+            {isAdmin ? 'Statystyki platformy' : 'Twoje statystyki'}
           </Text>
 
-          <Text>✅ Kupione produkty: {purchasedCount}</Text>
+          <Text>✅ Kupione produkty: {stats.purchasedCount}</Text>
           <Text>
-            💸 Wydane pieniądze: {totalSpent.toFixed(2)} zł
+            💸 Wydane pieniądze:{' '}
+            {stats.totalSpent.toFixed(2)} zł
           </Text>
-          <Text>⭐ Ocenione: {ratedCount}</Text>
-          <Text>⭐ Średnia: {avgRating.toFixed(1)}</Text>
-          <Text>💬 Komentarze: {commentsCount}</Text>
+          <Text>⭐ Ocenione: {stats.ratedCount}</Text>
+          <Text>
+            ⭐ Średnia: {stats.averageRating.toFixed(1)}
+          </Text>
+          <Text>💬 Komentarze: {stats.commentsCount}</Text>
         </View>
       </View>
 
