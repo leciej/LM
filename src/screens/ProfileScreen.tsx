@@ -75,6 +75,8 @@ const label = (type: string) =>
     COMMENT: '💬 Dodano komentarz',
     RATING: '⭐ Dodano ocenę',
     PURCHASE: '🛒 Złożono zamówienie',
+    ADD_TO_CART: '➕ Dodano do koszyka',
+    REMOVE_FROM_CART: '🗑 Usunięto z koszyka',
 
     ADD_PRODUCT: '➕ Dodano produkt',
     EDIT_PRODUCT: '✏️ Edytowano produkt',
@@ -162,7 +164,9 @@ export function ProfileScreen() {
       {/* DASHBOARD */}
       <View style={styles.dashboard}>
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Ostatnia aktywność</Text>
+          <Text style={styles.sectionTitle}>
+            Ostatnia aktywność
+          </Text>
 
           {visibleActivities.length === 0 ? (
             <Text style={styles.muted}>Brak aktywności</Text>
@@ -180,7 +184,9 @@ export function ProfileScreen() {
 
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>
-            {isAdmin ? 'Statystyki platformy' : 'Twoje statystyki'}
+            {isAdmin
+              ? 'Statystyki platformy'
+              : 'Twoje statystyki'}
           </Text>
 
           <Text>✅ Kupione produkty: {purchasedCount}</Text>

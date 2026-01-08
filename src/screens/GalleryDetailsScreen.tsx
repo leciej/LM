@@ -17,6 +17,7 @@ import { galleryStore } from '@/features/gallery/store/galleryStore';
 import { useAuth } from '@/auth/AuthContext';
 import { GalleryRatingsApi } from '@/api/galleryRatings/galleryRatingsApi';
 import { addItemToCart } from '@/features/cart/store/cartStore';
+import { addActivity } from '@/features/activity/store/activityStore';
 
 type GalleryStackParamList = {
   Gallery: undefined;
@@ -125,6 +126,8 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
         userId: user.id,
         value,
       });
+
+      addActivity('RATING'); // ✅ JEDYNA DODANA LINIJKA
 
       setMyRating(value);
       await loadRatings();
@@ -241,7 +244,6 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
         onPress={handleAddToCart}
       />
 
-      {/* ŚREDNIA */}
       <View style={styles.ratingRow}>
         <View style={styles.starsRow}>
           {renderAverageStars()}
@@ -251,7 +253,6 @@ export function GalleryDetailsScreen({ route, navigation }: Props) {
         </Text>
       </View>
 
-      {/* TWOJA OCENA */}
       <Text style={styles.sectionTitle}>
         {myRating ? 'Twoja ocena' : 'Oceń arcydzieło'}
       </Text>

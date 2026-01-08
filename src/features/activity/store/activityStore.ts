@@ -2,6 +2,7 @@ export type ActivityType =
   | 'COMMENT'
   | 'RATING'
   | 'PURCHASE'
+  | 'ADD_TO_CART'
   // ADMIN: produkty
   | 'ADD_PRODUCT'
   | 'EDIT_PRODUCT'
@@ -16,7 +17,7 @@ export type Activity = {
   createdAt: number;
 };
 
-const MAX_ITEMS = 8; // było 5, dałem trochę więcej żeby admin miał sensowny feed
+const MAX_ITEMS = 8;
 
 let activities: Activity[] = [];
 const listeners = new Set<() => void>();

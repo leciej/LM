@@ -1,9 +1,6 @@
 import { CartApi } from '../../../api/cart';
 import { getCurrentUserId } from '../../../auth/userSession';
-
-/* =========================
-   TYPES
-   ========================= */
+import { addActivity } from '../../activity/store/activityStore';
 
 export type Source = 'PRODUCTS' | 'GALLERY';
 
@@ -17,59 +14,37 @@ export type CartItem = {
   imageUrl?: string;
 };
 
-/* =========================
-   STATE
-   ========================= */
-
 let cart: CartItem[] = [];
-
-/* =========================
-   SUBSCRIPTIONS
-   ========================= */
-
 const listeners = new Set<() => void>();
-
-const notify = () => {
-  listeners.forEach(listener => listener());
-};
+const notify = () => listeners.forEach(l => l());
 
 export function subscribe(listener: () => void) {
   listeners.add(listener);
   return () => listeners.delete(listener);
 }
 
-/* =========================
-   READ
-   ========================= */
-
-export function getCartSnapshot(): CartItem[] {
+export function getCartSnapshot() {
   return cart;
 }
 
-export function getCartItemsCount(): number {
-  return cart.reduce((sum, item) => sum + item.quantity, 0);
+export function getCartItemsCount() {
+  return cart.reduce((s, i) => s + i.quantity, 0);
 }
 
-export function getProductsCount(): number {
+export function getProductsCount() {
   return cart
-    .filter(item => item.source === 'PRODUCTS')
-    .reduce((sum, item) => sum + item.quantity, 0);
+    .filter(i => i.source === 'PRODUCTS')
+    .reduce((s, i) => s + i.quantity, 0);
 }
 
-export function getGalleryCount(): number {
+export function getGalleryCount() {
   return cart
-    .filter(item => item.source === 'GALLERY')
-    .reduce((sum, item) => sum + item.quantity, 0);
+    .filter(i => i.source === 'GALLERY')
+    .reduce((s, i) => s + i.quantity, 0);
 }
 
-/* =========================
-   BACKEND → STORE
-   ========================= */
-
-export async function refreshCart(): Promise<void> {
+export async function refreshCart() {
   const userId = getCurrentUserId();
-
-  // 🔥 KLUCZOWE: brak usera = pusty koszyk
   if (!userId) {
     cart = [];
     notify();
@@ -77,31 +52,24 @@ export async function refreshCart(): Promise<void> {
   }
 
   const items = await CartApi.getCart(userId);
-
-  cart = items.map(item => ({
-    cartItemId: item.cartItemId,
-    id: item.id,
-    name: item.name,
-    price: Number(item.price),
-    quantity: item.quantity,
-    source: item.source,
-    imageUrl: item.imageUrl ?? undefined,
+  cart = items.map(i => ({
+    cartItemId: i.cartItemId,
+    id: i.id,
+    name: i.name,
+    price: Number(i.price),
+    quantity: i.quantity,
+    source: i.source,
+    imageUrl: i.imageUrl ?? undefined,
   }));
 
   notify();
 }
 
-/* =========================
-   ADD
-   ========================= */
-
 export async function addItemToCart(payload: {
   id: string;
   quantity?: number;
-}): Promise<void> {
+}) {
   const userId = getCurrentUserId();
-
-  // 🔥 bez usera NIE dodajemy
   if (!userId) return;
 
   await CartApi.addItem({
@@ -110,12 +78,9 @@ export async function addItemToCart(payload: {
     userId,
   });
 
+  addActivity('ADD_TO_CART');
   await refreshCart();
 }
-
-/* =========================
-   UPDATE
-   ========================= */
 
 export async function increaseItemInCart(cartItemId: string) {
   const userId = getCurrentUserId();
@@ -133,22 +98,17 @@ export async function decreaseItemInCart(cartItemId: string) {
   await refreshCart();
 }
 
-/* =========================
-   DELETE
-   ========================= */
-
 export async function removeItemFromCart(cartItemId: string) {
   const userId = getCurrentUserId();
   if (!userId) return;
 
   await CartApi.removeItem(cartItemId);
+  addActivity('REMOVE_FROM_CART');
   await refreshCart();
 }
 
 export async function clearCart() {
   const userId = getCurrentUserId();
-
-  // 🔥 GOŚĆ / BRAK USERA → lokalnie
   if (!userId) {
     cart = [];
     notify();
@@ -159,10 +119,6 @@ export async function clearCart() {
   cart = [];
   notify();
 }
-
-/* =========================
-   RESET (LOGOUT)
-   ========================= */
 
 export function resetCartStore() {
   cart = [];

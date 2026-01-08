@@ -15,6 +15,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import type { ProductsStackParamList } from '../navigation/TabsNavigator/ProductsStackNavigator';
 import { addItemToCart } from '../features/cart/store/cartStore';
+import { addCommentToStore } from '../features/comments/commentsStore';
 
 import {
   CommentsApi,
@@ -27,10 +28,6 @@ type Props = NativeStackScreenProps<
   ProductsStackParamList,
   'ProductDetails'
 >;
-
-/* =========================
-   HELPERS
-   ========================= */
 
 function formatRelativeDate(dateString: string): string {
   const now = new Date();
@@ -51,10 +48,6 @@ function formatRelativeDate(dateString: string): string {
   return date.toLocaleDateString('pl-PL');
 }
 
-/* =========================
-   COMPONENT
-   ========================= */
-
 export function ProductDetailsScreen({
   route,
   navigation,
@@ -66,10 +59,6 @@ export function ProductDetailsScreen({
   const [comments, setComments] = useState<CommentDto[]>([]);
   const [loadingComments, setLoadingComments] = useState(true);
   const [addingComment, setAddingComment] = useState(false);
-
-  /* =========================
-     LOAD COMMENTS
-     ========================= */
 
   useEffect(() => {
     setLoadingComments(true);
@@ -87,10 +76,6 @@ export function ProductDetailsScreen({
       .finally(() => setLoadingComments(false));
   }, [dto.id]);
 
-  /* =========================
-     CART
-     ========================= */
-
   const handleAddToCart = async () => {
     try {
       await addItemToCart({ id: dto.id });
@@ -103,9 +88,7 @@ export function ProductDetailsScreen({
       }
 
       navigation.goBack();
-    } catch (err) {
-      console.error('ADD TO CART ERROR', err);
-
+    } catch {
       if (Platform.OS === 'android') {
         ToastAndroid.show(
           'Nie udało się dodać do koszyka',
@@ -114,10 +97,6 @@ export function ProductDetailsScreen({
       }
     }
   };
-
-  /* =========================
-     ADD COMMENT
-     ========================= */
 
   const handleAddComment = async () => {
     if (!commentText.trim() || !user) return;
@@ -133,23 +112,18 @@ export function ProductDetailsScreen({
         }
       );
 
+      addCommentToStore(
+        dto.id,
+        commentText.trim(),
+        user.name
+      );
+
       setComments(prev => [newComment, ...prev]);
       setCommentText('');
-    } catch {
-      if (Platform.OS === 'android') {
-        ToastAndroid.show(
-          'Nie udało się dodać komentarza',
-          ToastAndroid.SHORT
-        );
-      }
     } finally {
       setAddingComment(false);
     }
   };
-
-  /* =========================
-     RENDER
-     ========================= */
 
   return (
     <ScrollView style={styles.container}>
@@ -230,18 +204,9 @@ export function ProductDetailsScreen({
   );
 }
 
-/* =========================
-   STYLES
-   ========================= */
-
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
-
-  hero: {
-    flexDirection: 'row',
-    marginBottom: 20,
-  },
-
+  hero: { flexDirection: 'row', marginBottom: 20 },
   image: {
     width: '25%',
     aspectRatio: 1,
@@ -249,49 +214,29 @@ const styles = StyleSheet.create({
     marginRight: 16,
     backgroundColor: '#eee',
   },
-
   info: { width: '75%' },
-
-  name: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-
+  name: { fontSize: 20, fontWeight: '700' },
   price: { marginBottom: 8 },
-
   desc: { color: '#555' },
-
   sectionTitle: {
     marginTop: 24,
     fontSize: 18,
     fontWeight: '700',
   },
-
   comment: {
     padding: 8,
     backgroundColor: '#eee',
     borderRadius: 6,
     marginBottom: 6,
   },
-
   commentHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 4,
   },
-
   author: { fontWeight: '700' },
-
-  date: {
-    fontSize: 12,
-    color: '#666',
-  },
-
-  empty: {
-    fontStyle: 'italic',
-    color: '#666',
-  },
-
+  date: { fontSize: 12, color: '#666' },
+  empty: { fontStyle: 'italic', color: '#666' },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
