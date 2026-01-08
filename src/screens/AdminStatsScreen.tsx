@@ -1,5 +1,5 @@
 // screens/AdminStatsScreen.tsx
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,33 +9,23 @@ import {
 import { observer } from 'mobx-react-lite';
 
 import { galleryStore } from '../features/gallery/store/galleryStore';
-
 import { useProducts } from '../features/products/useProducts';
+import { http } from '../api/http';
 
-import {
-  subscribe as subscribePurchases,
-  getPurchasedCount,
-  getTotalSpent,
-} from '../features/purchases/store/purchasesStore';
-
-import {
-  subscribe as subscribeRatings,
-  getRatedCountTotal,
-  getAverageRatingTotal,
-} from '../features/ratings/store/ratingsStore';
-
-import {
-  subscribe as subscribeComments,
-  getCommentsCountTotal,
-} from '../features/comments/commentsStore';
-
-import {
-  subscribe as activitySubscribe,
-  getActivities,
-} from '../features/activity/store/activityStore';
-
-import { useSyncExternalStore } from 'react';
 import { LineChart } from '../components/LineChart';
+
+/* =========================
+   TYPES
+   ========================= */
+
+type PlatformStats = {
+  purchasedCount: number;
+  totalSpent: number;
+  ratedCount: number;
+  averageRating: number;
+  commentsCount: number;
+  activitiesCount: number;
+};
 
 /* =========================
    SCREEN
@@ -47,44 +37,25 @@ export const AdminStatsScreen = observer(() => {
   }, []);
 
   const gallery = galleryStore.items;
-
-  const activities =
-    useSyncExternalStore(
-      activitySubscribe,
-      getActivities
-    ) ?? [];
-
-  const purchasedCount =
-    useSyncExternalStore(
-      subscribePurchases,
-      getPurchasedCount
-    ) ?? 0;
-
-  const totalSpent =
-    useSyncExternalStore(
-      subscribePurchases,
-      getTotalSpent
-    ) ?? 0;
-
-  const ratedCount =
-    useSyncExternalStore(
-      subscribeRatings,
-      getRatedCountTotal
-    ) ?? 0;
-
-  const avgRating =
-    useSyncExternalStore(
-      subscribeRatings,
-      getAverageRatingTotal
-    ) ?? 0;
-
-  const commentsCount =
-    useSyncExternalStore(
-      subscribeComments,
-      getCommentsCountTotal
-    ) ?? 0;
-
   const { products } = useProducts();
+
+  const [stats, setStats] = useState<PlatformStats>({
+    purchasedCount: 0,
+    totalSpent: 0,
+    ratedCount: 0,
+    averageRating: 0,
+    commentsCount: 0,
+    activitiesCount: 0,
+  });
+
+  useEffect(() => {
+    http
+      .get<PlatformStats>('/stats/platform')
+      .then(res => setStats(res.data))
+      .catch(err => {
+        console.error('STATS ERROR', err);
+      });
+  }, []);
 
   const series = useMemo(
     () => [2, 4, 1, 7, 3, 6, 4],
@@ -97,17 +68,11 @@ export const AdminStatsScreen = observer(() => {
       contentContainerStyle={styles.content}
     >
       <View style={styles.grid}>
-        <StatCard
-          label="Produkty"
-          value={products.length}
-        />
-        <StatCard
-          label="Arcydzieła"
-          value={gallery.length}
-        />
+        <StatCard label="Produkty" value={products.length} />
+        <StatCard label="Arcydzieła" value={gallery.length} />
         <StatCard
           label="Aktywności"
-          value={activities.length}
+          value={stats.activitiesCount}
         />
       </View>
 
@@ -118,23 +83,23 @@ export const AdminStatsScreen = observer(() => {
 
         <StatRow
           label="✅ Kupione produkty"
-          value={purchasedCount.toString()}
+          value={stats.purchasedCount.toString()}
         />
         <StatRow
           label="💸 Wydane pieniądze"
-          value={`${totalSpent.toFixed(2)} zł`}
+          value={`${stats.totalSpent.toFixed(2)} zł`}
         />
         <StatRow
           label="⭐ Ocenione"
-          value={ratedCount.toString()}
+          value={stats.ratedCount.toString()}
         />
         <StatRow
           label="⭐ Średnia"
-          value={avgRating.toFixed(1)}
+          value={stats.averageRating.toFixed(1)}
         />
         <StatRow
           label="💬 Komentarze"
-          value={commentsCount.toString()}
+          value={stats.commentsCount.toString()}
         />
       </View>
 
@@ -143,7 +108,6 @@ export const AdminStatsScreen = observer(() => {
           <Text style={styles.sectionTitle}>
             📈 Wydatki – ostatnie 7 dni
           </Text>
-
           <LineChart data={series} />
         </View>
       )}
@@ -195,8 +159,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f6f8',
   },
   content: {
+    minHeight: '100%',          // ✅ KLUCZ
     padding: 16,
     paddingBottom: 32,
+    backgroundColor: '#f5f6f8', // ✅ KLUCZ
   },
   grid: {
     flexDirection: 'row',
@@ -213,6 +179,7 @@ const styles = StyleSheet.create({
   cardValue: {
     fontSize: 26,
     fontWeight: '800',
+    color: '#111827',
   },
   cardLabel: {
     marginTop: 4,
@@ -230,6 +197,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     marginBottom: 12,
+    color: '#111827',
   },
   statRow: {
     flexDirection: 'row',
@@ -241,5 +209,6 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontWeight: '700',
+    color: '#111827',
   },
 });

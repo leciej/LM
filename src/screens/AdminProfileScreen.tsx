@@ -76,7 +76,7 @@ function AnimatedActionButton({
       friction: 4,
       useNativeDriver: true,
     }).start(() => {
-      onPress(); // 🚀 nawigacja po animacji
+      onPress();
     });
   };
 
@@ -105,7 +105,10 @@ export function AdminProfileScreen({ navigation }: any) {
   const activities = useSyncExternalStore(
     subscribeActivity,
     getActivities
-  ).filter(a => isAdminType(a.type));
+  ).filter(
+    a =>
+      isAdminType(a.type)
+  );
 
   if (!isAdmin || !user) {
     return (
@@ -161,18 +164,24 @@ export function AdminProfileScreen({ navigation }: any) {
 
           <AnimatedActionButton
             label="📦 Produkty"
-            onPress={() => navigation.navigate('AdminProducts')}
+            onPress={() =>
+              navigation.navigate('AdminProducts')
+            }
           />
 
           <AnimatedActionButton
             label="🖼 Arcydzieła"
-            onPress={() => navigation.navigate('AdminGallery')}
+            onPress={() =>
+              navigation.navigate('AdminGallery')
+            }
           />
 
           <AnimatedActionButton
             label="📊 Statystyki"
             variant="secondary"
-            onPress={() => navigation.navigate('AdminStats')}
+            onPress={() =>
+              navigation.navigate('AdminStats')
+            }
           />
         </View>
       </View>
