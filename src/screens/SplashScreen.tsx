@@ -60,7 +60,7 @@ export function SplashScreen() {
   );
 }
 
-/* ===== styles ===== */
+
 
 const styles = StyleSheet.create({
   container: {

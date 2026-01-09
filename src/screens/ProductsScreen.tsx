@@ -21,7 +21,7 @@ import { useProducts } from '../features/products/useProducts';
 import { addItemToCart } from '../features/cart/store/cartStore';
 import type { ProductDto } from '../api/products';
 
-// ✅ JEDYNA ZMIANA: import ParamList z poprawionego pliku (bez `source`)
+
 import type { ProductsStackParamList } from '../navigation/TabsNavigator/ProductsStackNavigator';
 
 /* =========================
@@ -147,7 +147,7 @@ export function ProductsScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      {/* SORT MENU OVERLAY */}
+      {}
       {menuOpen && (
         <Pressable
           style={styles.overlay}
@@ -190,7 +190,7 @@ export function ProductsScreen({ navigation }: Props) {
         </Pressable>
       )}
 
-      {/* LIST */}
+      {}
       <FlatList
         ref={listRef}
         data={sortedProducts}
@@ -257,7 +257,7 @@ export function ProductsScreen({ navigation }: Props) {
         )}
       />
 
-      {/* SCROLL TO TOP */}
+      {}
       {showScrollTop && (
         <Pressable
           style={styles.scrollTopButton}
@@ -274,7 +274,7 @@ export function ProductsScreen({ navigation }: Props) {
         </Pressable>
       )}
 
-      {/* SOFT ERROR */}
+      {}
       {error && products.length > 0 && (
         <Text style={styles.softError}>
           {error}

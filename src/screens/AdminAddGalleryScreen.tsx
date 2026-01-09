@@ -135,7 +135,7 @@ export function AdminAddGalleryScreen({ navigation, route }: any) {
         toast('Dodano arcydzieło');
       }
 
-      // 🔴 KLUCZOWA LINIA
+
       galleryStore.invalidate();
 
       navigation.goBack();

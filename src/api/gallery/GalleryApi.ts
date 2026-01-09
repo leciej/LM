@@ -1,4 +1,4 @@
-// api/gallery/GalleryApi.ts
+
 import { httpRequest } from '../client';
 import {
   GalleryItemDto,

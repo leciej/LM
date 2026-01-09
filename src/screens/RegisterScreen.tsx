@@ -86,10 +86,10 @@ export function RegisterScreen() {
     try {
       setLoading(true);
 
-      // ✅ REJESTRACJA PRZEZ AXIOS (TEN SAM BACKEND CO LOGIN)
+
       await http.post('/users/register', payload);
 
-      // ✅ AUTO-LOGIN
+
       await login(payload.login, password);
 
       Alert.alert(

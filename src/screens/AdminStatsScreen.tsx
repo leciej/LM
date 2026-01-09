@@ -1,4 +1,4 @@
-// screens/AdminStatsScreen.tsx
+
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -77,7 +77,7 @@ export const AdminStatsScreen = observer(() => {
       style={styles.container}
       contentContainerStyle={styles.content}
     >
-      {/* TOP CARDS */}
+      {}
       <View style={styles.grid}>
         <StatCard label="Produkty" value={products.length} />
         <StatCard label="Arcydzieła" value={gallery.length} />
@@ -87,7 +87,7 @@ export const AdminStatsScreen = observer(() => {
         />
       </View>
 
-      {/* PLATFORM STATS */}
+      {}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>
           Statystyki platformy
@@ -115,7 +115,7 @@ export const AdminStatsScreen = observer(() => {
         />
       </View>
 
-      {/* BAR CHART */}
+      {}
       {chart.orders.length === 7 && chart.revenue.length === 7 && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>

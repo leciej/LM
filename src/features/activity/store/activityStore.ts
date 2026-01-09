@@ -3,11 +3,11 @@ export type ActivityType =
   | 'RATING'
   | 'PURCHASE'
   | 'ADD_TO_CART'
-  // ADMIN: produkty
+
   | 'ADD_PRODUCT'
   | 'EDIT_PRODUCT'
   | 'REMOVE_PRODUCT'
-  // ADMIN: arcydzieła (gallery)
+
   | 'ADD_GALLERY'
   | 'EDIT_GALLERY'
   | 'REMOVE_GALLERY';

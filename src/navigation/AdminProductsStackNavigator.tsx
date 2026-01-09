@@ -18,14 +18,14 @@ export function AdminProductsStackNavigator() {
       screenOptions={{
         headerShown: true,
 
-        // ✨ GŁÓWNA ANIMACJA
+
         animation: 'slide_from_right',
         animationDuration: 220,
 
-        // 📱 gest cofania (iOS / Android)
+
         gestureEnabled: true,
 
-        // 🧠 lepsze „czucie” przejścia
+
         gestureDirection: 'horizontal',
       }}
     >
@@ -43,7 +43,7 @@ export function AdminProductsStackNavigator() {
         options={{
           title: 'Dodaj / edytuj produkt',
 
-          // ➕ trochę „modal feel”
+
           animation: 'slide_from_bottom',
         }}
       />

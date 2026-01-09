@@ -68,7 +68,7 @@ export function AnimatedAverageStars({
               { width: size, height: size },
             ]}
           >
-            {/* tło */}
+            {}
             <Animated.Text
               style={[
                 styles.star,
@@ -78,7 +78,7 @@ export function AnimatedAverageStars({
               ★
             </Animated.Text>
 
-            {/* wypełnienie */}
+            {}
             <Animated.View
               style={[
                 styles.fill,

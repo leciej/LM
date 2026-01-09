@@ -67,7 +67,7 @@ export function LoginScreen() {
     }
   };
 
-  // ✅ KLUCZOWE: jawny handler gościa
+
   const handleGuestLogin = async () => {
     try {
       await loginAsGuest();
@@ -121,7 +121,7 @@ export function LoginScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Guten Tag twoja mać!</Text>
 
-      {/* 👇 TU BYŁ PROBLEM */}
+      {}
       <Pressable
         style={[styles.button, styles.guestButton]}
         onPress={handleGuestLogin}

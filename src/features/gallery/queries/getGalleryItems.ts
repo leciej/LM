@@ -1,4 +1,4 @@
-// features/gallery/queries/getGalleryItems.ts
+
 import { GalleryApi } from '@/api/gallery';
 
 export const getGalleryItemsQuery = async () => {

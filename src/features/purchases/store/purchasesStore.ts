@@ -24,7 +24,7 @@ export function getPurchasedCount() {
   );
 }
 
-/* ✅ NOWE */
+
 export function getTotalSpent() {
   return purchased.reduce(
     (sum, item) =>

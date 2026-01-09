@@ -120,7 +120,7 @@ export function AdminProfileScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      {/* HEADER */}
+      {}
       <View style={styles.header}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
@@ -136,9 +136,9 @@ export function AdminProfileScreen({ navigation }: any) {
         </View>
       </View>
 
-      {/* DASHBOARD */}
+      {}
       <View style={styles.dashboard}>
-        {/* ACTIVITY */}
+        {}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>
             Ostatnia aktywność
@@ -158,7 +158,7 @@ export function AdminProfileScreen({ navigation }: any) {
           )}
         </View>
 
-        {/* QUICK ACTIONS */}
+        {}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Szybkie akcje</Text>
 
@@ -186,7 +186,7 @@ export function AdminProfileScreen({ navigation }: any) {
         </View>
       </View>
 
-      {/* ACTIONS */}
+      {}
       <View style={styles.actions}>
         <Button title="Wyloguj się" onPress={logout} />
       </View>

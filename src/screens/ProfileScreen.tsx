@@ -107,7 +107,7 @@ export function ProfileScreen() {
     commentsCount: 0,
   });
 
-  // 🔥 KLUCZ: odświeżanie statystyk ZA KAŻDYM WEJŚCIEM NA EKRAN
+
   useFocusEffect(
     useCallback(() => {
       if (!user) return;
@@ -138,7 +138,7 @@ export function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      {/* HEADER */}
+      {}
       <View style={styles.header}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
@@ -156,7 +156,7 @@ export function ProfileScreen() {
         </View>
       </View>
 
-      {/* DASHBOARD */}
+      {}
       <View style={styles.dashboard}>
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Ostatnia aktywność</Text>
@@ -193,7 +193,7 @@ export function ProfileScreen() {
         </View>
       </View>
 
-      {/* ACTIONS */}
+      {}
       <View style={styles.actions}>
         <Button title="Wyloguj się" onPress={logout} />
       </View>

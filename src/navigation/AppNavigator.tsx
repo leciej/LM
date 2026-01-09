@@ -27,7 +27,7 @@ export function AppNavigator() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {!isLoggedIn ? (
         <>
-          {/* Splash tylko jako ENTRY POINT */}
+          {}
           <Stack.Screen
             name="Splash"
             component={SplashScreen}

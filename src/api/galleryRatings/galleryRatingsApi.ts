@@ -20,7 +20,7 @@ export type CreateGalleryRatingRequestDto = {
    ========================= */
 
 export const GalleryRatingsApi = {
-  // GET /api/gallery/{galleryItemId}/ratings?userId=...
+
   getByGalleryItemId: async (
     galleryItemId: string,
     userId?: number
@@ -34,7 +34,7 @@ export const GalleryRatingsApi = {
     return data;
   },
 
-  // POST /api/gallery/{galleryItemId}/ratings
+
   create: async (
     galleryItemId: string,
     payload: CreateGalleryRatingRequestDto

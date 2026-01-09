@@ -21,7 +21,7 @@ export type CreateCommentRequestDto = {
    ========================= */
 
 export const CommentsApi = {
-  // GET /api/products/{productId}/comments
+
   getByProductId: async (
     productId: string
   ): Promise<CommentDto[]> => {
@@ -31,7 +31,7 @@ export const CommentsApi = {
     return data;
   },
 
-  // POST /api/products/{productId}/comments
+
   create: async (
     productId: string,
     payload: CreateCommentRequestDto

@@ -81,7 +81,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     loginOrEmail: string,
     password: string
   ) => {
-    // reset FE stores to avoid "guest -> user" carry-over
+
     resetActivity();
     resetRatings();
     resetComments();
@@ -107,7 +107,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
      LOGIN GUEST
      ========================= */
   const loginAsGuest = async () => {
-    // reset FE stores to avoid previous session carry-over
+
     resetActivity();
     resetRatings();
     resetComments();
@@ -131,13 +131,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
      ========================= */
   const logout = async () => {
     try {
-      // 🔥 TYLKO GOŚĆ → backend cleanup
+
       if (user?.role === 'GUEST') {
         await CartApi.clear(user.id);
         await http.post('/users/logout', user.id);
       }
     } finally {
-      // frontend reset ZAWSZE
+
       setCurrentUserId(null);
 
       resetActivity();

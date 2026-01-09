@@ -62,7 +62,7 @@ export function BarChart({
 
   return (
     <View>
-      {/* GRID */}
+      {}
       <View style={styles.grid}>
         {Array.from({ length: GRID_LINES + 1 }).map(
           (_, i) => (
@@ -87,7 +87,7 @@ export function BarChart({
         )}
       </View>
 
-      {/* CHART */}
+      {}
       <View style={styles.chart}>
         {DAYS.map((day, i) => {
           const hA =
@@ -157,7 +157,7 @@ export function BarChart({
         })}
       </View>
 
-      {/* TOOLTIP */}
+      {}
       {active && (
         <View style={styles.tooltip}>
           <Text style={styles.tooltipText}>
@@ -169,7 +169,7 @@ export function BarChart({
         </View>
       )}
 
-      {/* LEGEND */}
+      {}
       <View style={styles.legend}>
         <LegendItem
           color="#93C5FD"
