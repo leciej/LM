@@ -1,5 +1,5 @@
 // screens/AdminStatsScreen.tsx
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import { galleryStore } from '../features/gallery/store/galleryStore';
 import { useProducts } from '../features/products/useProducts';
 import { http } from '../api/http';
 
-import { LineChart } from '../components/LineChart';
+import { BarChart } from '../components/BarChart';
 
 /* =========================
    TYPES
@@ -57,16 +57,12 @@ export const AdminStatsScreen = observer(() => {
       });
   }, []);
 
-  const series = useMemo(
-    () => [2, 4, 1, 7, 3, 6, 4],
-    []
-  );
-
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
     >
+      {/* TOP CARDS */}
       <View style={styles.grid}>
         <StatCard label="Produkty" value={products.length} />
         <StatCard label="Arcydzieła" value={gallery.length} />
@@ -76,6 +72,7 @@ export const AdminStatsScreen = observer(() => {
         />
       </View>
 
+      {/* PLATFORM STATS */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>
           Statystyki platformy
@@ -103,14 +100,19 @@ export const AdminStatsScreen = observer(() => {
         />
       </View>
 
-      {series.length > 1 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            📈 Wydatki – ostatnie 7 dni
-          </Text>
-          <LineChart data={series} />
-        </View>
-      )}
+      {/* BAR CHART */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>
+          📊 Zakupy vs Aktywności
+        </Text>
+
+        <BarChart
+          seriesA={[stats.purchasedCount]}
+          seriesB={[stats.activitiesCount]}
+          labelA="Zakupy"
+          labelB="Aktywności"
+        />
+      </View>
     </ScrollView>
   );
 });
@@ -159,10 +161,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f6f8',
   },
   content: {
-    minHeight: '100%',          // ✅ KLUCZ
+    minHeight: '100%',
     padding: 16,
     paddingBottom: 32,
-    backgroundColor: '#f5f6f8', // ✅ KLUCZ
+    backgroundColor: '#f5f6f8',
   },
   grid: {
     flexDirection: 'row',
