@@ -27,6 +27,12 @@ type PlatformStats = {
   activitiesCount: number;
 };
 
+type OrdersChart = {
+  days: string[];
+  orders: number[];
+  revenue: number[];
+};
+
 /* =========================
    SCREEN
    ========================= */
@@ -48,13 +54,22 @@ export const AdminStatsScreen = observer(() => {
     activitiesCount: 0,
   });
 
+  const [chart, setChart] = useState<OrdersChart>({
+    days: [],
+    orders: [],
+    revenue: [],
+  });
+
   useEffect(() => {
     http
       .get<PlatformStats>('/stats/platform')
       .then(res => setStats(res.data))
-      .catch(err => {
-        console.error('STATS ERROR', err);
-      });
+      .catch(() => {});
+
+    http
+      .get<OrdersChart>('/stats/orders-last-7-days')
+      .then(res => setChart(res.data))
+      .catch(() => {});
   }, []);
 
   return (
@@ -101,18 +116,20 @@ export const AdminStatsScreen = observer(() => {
       </View>
 
       {/* BAR CHART */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>
-          📊 Zakupy vs Aktywności
-        </Text>
+      {chart.orders.length === 7 && chart.revenue.length === 7 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            📊 Zamówienia vs Przychód (7 dni)
+          </Text>
 
-        <BarChart
-          seriesA={[stats.purchasedCount]}
-          seriesB={[stats.activitiesCount]}
-          labelA="Zakupy"
-          labelB="Aktywności"
-        />
-      </View>
+          <BarChart
+            seriesA={chart.orders}
+            seriesB={chart.revenue.map(v => Math.round(v))}
+            labelA="Zamówienia"
+            labelB="Przychód"
+          />
+        </View>
+      )}
     </ScrollView>
   );
 });
